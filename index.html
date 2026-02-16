@@ -9,16 +9,33 @@
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>🐰 Agent Fluffy Bunny</h1>
-    <p id="status">Status: Ready</p>
+  <div class="app">
+    <!-- LEFT: Bunny Panel -->
+    <section class="panel bunny-panel">
+      <div class="bunny-card">
+        <div id="bunnyFace" class="bunny-face">🐰</div>
+        <div class="bunny-info">
+          <div class="bunny-name">Agent Fluffy Bunny</div>
+          <div id="bunnyStatus" class="bunny-status">Idle</div>
+        </div>
 
-    <div class="row">
-      <input id="msg" placeholder="Type a message…" />
-      <button id="send">Send</button>
-    </div>
+        <div class="bunny-controls">
+          <button id="wakeBtn" class="secondary">Wake</button>
+          <button id="costumeBtn" class="secondary">Costume</button>
+        </div>
+      </div>
+    </section>
 
-    <div id="chat"></div>
+    <!-- RIGHT: Chat Panel -->
+    <section class="panel chat-panel">
+      <div id="chatLog" class="chat-log"></div>
+
+      <div class="chat-input">
+        <button id="micBtn" class="secondary">🎤</button>
+        <input id="msgInput" type="text" placeholder="Message Fluffy Bunny…" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </section>
   </div>
 
   <script type="module" src="/src/main.js"></script>
