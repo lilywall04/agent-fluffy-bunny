@@ -9,31 +9,46 @@
 </head>
 
 <body>
-  <div class="app">
+  <div class="flex flex-col w-full h-screen bg-surface 
+              md:w-[90%] md:max-w-[500px] md:h-[80vh] md:min-h-[600px] md:rounded-3xl 
+              md:shadow-[0_20px_60px_rgba(0,0,0,0.08)] overflow-hidden">
     <!-- LEFT: Bunny Panel -->
-    <section class="panel bunny-panel">
-      <div class="bunny-card">
-        <img id="bunnyImg" class="bunny-img" src="/src/assets/Basicbunny.png" alt="Bunny" />
-        <div class="bunny-info">
-          <div class="bunny-name">Agent Fluffy Bunny</div>
-          <div id="bunnyStatus" class="bunny-status">Idle</div>
+    <section
+      class="p-4 flex flex-row justify-between border-b border-border-main bg-[#fdfdff] 
+                    md:p-5 md:pb-6 md:flex-col md:items-center md:justify-center md:text-center md:flex-[2] overflow-hidden">
+      <div class="flex flex-row gap-3 w-full 
+                  md:flex-col md:items-center md:justify-center md:h-full">
+        <img id="bunnyImg" class="max-w-full max-h-[50vh] w-auto h-auto object-contain 
+                                  drop-shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-transform duration-300"
+          src="/src/assets/Basicbunny.png" alt="Bunny" />
+        <div class="flex flex-col items-center flex-initial">
+          <div class="text-xl font-bold text-text-main mb-2">Agent Fluffy Bunny</div>
+          <div id="bunnyStatus" class="text-sm text-text-muted bg-[#eee] px-3 py-1 rounded-full inline-block">Idle</div>
         </div>
 
-        <div class="bunny-controls">
-          <button id="wakeBtn" class="secondary">Wake</button>
-          <button id="costumeBtn" class="secondary">Costume</button>
+        <div class="flex gap-2 mt-0 ml-auto md:mt-2 md:justify-center md:flex-wrap md:ml-0">
+          <button id="wakeBtn"
+            class="px-5 py-2.5 rounded-xl font-semibold cursor-pointer transition-all active:scale-95 
+                                      bg-transparent text-text-muted border border-border-main hover:bg-[#f0f0f0] hover:text-text-main!">Wake</button>
+          <button id="costumeBtn"
+            class="px-5 py-2.5 rounded-xl font-semibold cursor-pointer transition-all active:scale-95 
+                                         bg-transparent text-text-muted border border-border-main hover:bg-[#f0f0f0] hover:text-text-main!">Costume</button>
         </div>
       </div>
     </section>
 
     <!-- RIGHT: Chat Panel -->
-    <section class="panel chat-panel">
-      <div id="chatLog" class="chat-log"></div>
+    <section class="flex-1 bg-surface flex flex-col overflow-hidden md:p-5">
+      <div id="chatLog" class="flex-1 overflow-y-auto p-5 flex flex-col gap-3"></div>
 
-      <div class="chat-input">
-        <button id="micBtn" class="secondary">🎤</button>
-        <input id="msgInput" type="text" placeholder="Message Fluffy Bunny…" />
-        <button id="sendBtn">Send</button>
+      <div class="flex gap-2.5 p-5 border-t border-border-main">
+        <button id="micBtn"
+          class="px-5 py-2.5 rounded-xl font-semibold cursor-pointer transition-all active:scale-95 
+                                   bg-transparent text-text-muted border border-border-main hover:bg-[#f0f0f0] hover:text-text-main!">🎤</button>
+        <input id="msgInput" type="text" placeholder="Message Fluffy Bunny…"
+          class="flex-1 px-4 py-3 border border-border-main rounded-xl text-base outline-none transition-colors focus:border-primary" />
+        <button id="sendBtn" class="px-5 py-2.5 border-none rounded-xl bg-primary text-white font-semibold cursor-pointer 
+                                    transition-all hover:opacity-90 active:scale-95">Send</button>
       </div>
     </section>
   </div>

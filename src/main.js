@@ -17,7 +17,13 @@ function setStatus(text) {
 
 function addMessage(text, who) {
   const div = document.createElement("div");
-  div.className = `msg ${who}`;
+  let classes = "max-w-[80%] px-4 py-3 rounded-2xl text-[0.95rem] leading-snug animate-pop-in ";
+  if (who === "you" || who === "user") {
+    classes += "self-end bg-primary text-white rounded-br-sm";
+  } else {
+    classes += "self-start bg-[#f1f2f6] text-text-main rounded-bl-sm";
+  }
+  div.className = classes;
   div.textContent = text;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
