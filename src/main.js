@@ -1,78 +1,73 @@
-const bunnyFace = document.getElementById("bunnyFace");
-const bunnyStatus = document.getElementById("bunnyStatus");
 const chatLog = document.getElementById("chatLog");
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
+const micBtn = document.getElementById("micBtn");
 const wakeBtn = document.getElementById("wakeBtn");
 const costumeBtn = document.getElementById("costumeBtn");
-const micBtn = document.getElementById("micBtn");
+const bunnyStatus = document.getElementById("bunnyStatus");
+const bunnyImg = document.getElementById("bunnyImg");
 
-const responses = [
-  "You've got this! ✨",
-  "Believe in yourself! 🐰",
-  "Keep going, you're doing great! 🥕",
-  "I'm rooting for you!",
-  "Hop to it! 🐇"
-];
-
-const costumes = ["🐰", "🎩", "🕶️", "🦸", "🧚"];
+let awake = false;
 let costumeIndex = 0;
+const costumes = ["🐰", "🐰🎀", "🐰🕶️", "🐰👑"];
 
-function addMessage(text, type) {
+function setStatus(text) {
+  bunnyStatus.textContent = text;
+}
+
+function addMessage(text, who) {
   const div = document.createElement("div");
-  div.className = `message ${type}`;
+  div.className = `msg ${who}`;
   div.textContent = text;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function handleSend() {
+function pretendBunnyReply(userText) {
+  setStatus("Talking");
+  if (bunnyImg) bunnyImg.style.transform = "scale(1.05)";
+
+  setTimeout(() => {
+    addMessage("Bunny: You’ve got this ✨ (placeholder reply)", "bunny");
+    if (bunnyImg) bunnyImg.style.transform = "scale(1)";
+    setStatus("Idle");
+  }, 600);
+}
+
+function sendMessage() {
   const text = msgInput.value.trim();
   if (!text) return;
 
-  addMessage(text, "user");
-  msgInput.value = "";
+  if (!awake) {
+    addMessage("Bunny: (asleep) Press Wake first 💤", "bunny");
+    return;
+  }
 
-  // Simulate bunny thinking
-  bunnyStatus.textContent = "Thinking...";
-  setTimeout(() => {
-    const reply = responses[Math.floor(Math.random() * responses.length)];
-    addMessage(reply, "bot");
-    bunnyStatus.textContent = "Idle";
-  }, 1000);
+  addMessage("You: " + text, "you");
+  msgInput.value = "";
+  pretendBunnyReply(text);
 }
 
-sendBtn.addEventListener("click", handleSend);
-
+sendBtn.addEventListener("click", sendMessage);
 msgInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") handleSend();
+  if (e.key === "Enter") sendMessage();
 });
 
 wakeBtn.addEventListener("click", () => {
-  bunnyStatus.textContent = "Awake & Happy!";
-  bunnyFace.style.animation = "none";
-  // Trigger reflow
-  void bunnyFace.offsetWidth;
-  bunnyFace.style.animation = "float 0.5s ease-in-out infinite";
-  setTimeout(() => {
-    bunnyFace.style.animation = "float 3s ease-in-out infinite";
-    bunnyStatus.textContent = "Idle";
-  }, 2000);
+  awake = !awake;
+  setStatus(awake ? "Listening" : "Idle (asleep)");
+  addMessage(`Bunny: ${awake ? "I’m awake! 😊" : "Going to sleep… 💤"}`, "bunny");
 });
 
 costumeBtn.addEventListener("click", () => {
-  costumeIndex = (costumeIndex + 1) % costumes.length;
-  bunnyFace.textContent = costumes[costumeIndex];
+  // costumeIndex = (costumeIndex + 1) % costumes.length;
+  // Placeholder since we use an image now
+  addMessage("Bunny: I'll wear a costume when you add image assets! 👗", "bunny");
 });
 
 micBtn.addEventListener("click", () => {
-  bunnyStatus.textContent = "Listening...";
-  setTimeout(() => {
-    bunnyStatus.textContent = "Idle";
-    addMessage("I can't hear you yet, but I'm listening with my heart! ❤️", "bot");
-  }, 1500);
+  addMessage("Bunny: Mic button works later (Step 6). For now, type and send!", "bunny");
 });
 
-// Initial welcome
-addMessage("Hi! I'm Fluffy Bunny. How can I help you today?", "bot");
-
+setStatus("Idle (asleep)");
+addMessage("Bunny: Hi! Press Wake to start 🐰", "bunny");
