@@ -13,15 +13,31 @@ const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+/*
+Conversation memory
+This stores the conversation so the AI remembers previous messages
+*/
+let conversationHistory = [];
+
+
+/* Test homepage route */
 app.get("/", (req, res) => {
     res.send("🐰 Fluffy Bunny server is running!");
 });
 
+
+/* Chat endpoint */
 app.post("/chat", async (req, res) => {
 
     const { message } = req.body;
 
     try {
+
+        /* Save user message to memory */
+        conversationHistory.push({
+            role: "user",
+            content: message
+        });
 
         const completion = await client.chat.completions.create({
             model: "gpt-4o-mini",
@@ -29,16 +45,19 @@ app.post("/chat", async (req, res) => {
                 {
                     role: "system",
                     content:
-                        "You are Agent Fluffy Bunny, an extremely positive and inspirational AI assistant that speaks encouragingly."
+                        "You are Agent Fluffy Bunny, an extremely positive, inspirational AI personal assistant. You speak warmly, encouragingly, and optimistically. You try to help the user with anything they ask."
                 },
-                {
-                    role: "user",
-                    content: message
-                }
+                ...conversationHistory
             ]
         });
 
         const reply = completion.choices[0].message.content;
+
+        /* Save AI response to memory */
+        conversationHistory.push({
+            role: "assistant",
+            content: reply
+        });
 
         res.json({ reply });
 
@@ -53,6 +72,7 @@ app.post("/chat", async (req, res) => {
     }
 
 });
+
 
 app.listen(3000, () => {
     console.log("🐰 Bunny brain running on http://localhost:3000");
