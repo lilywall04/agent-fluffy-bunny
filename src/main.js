@@ -51,7 +51,7 @@ function sendMessage() {
 
   addMessage("You: " + text, "you");
   msgInput.value = "";
-  pretendBunnyReply(text);
+  askBunny(text);
 }
 
 sendBtn.addEventListener("click", sendMessage);
@@ -77,3 +77,39 @@ micBtn.addEventListener("click", () => {
 
 setStatus("Idle (asleep)");
 addMessage("Bunny: Hi! Press Wake to start 🐰", "bunny");
+
+async function askBunny(userText) {
+
+  setStatus("Thinking...");
+
+  if (bunnyImg) bunnyImg.style.transform = "scale(1.05)";
+
+  try {
+
+    const response = await fetch("http://localhost:3000/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: userText
+      })
+    });
+
+    const data = await response.json();
+
+    addMessage("Bunny: " + data.reply, "bunny");
+
+    setStatus("Listening");
+
+    if (bunnyImg) bunnyImg.style.transform = "scale(1)";
+
+  } catch (error) {
+
+    addMessage("Bunny: Something went wrong talking to my brain 😵", "bunny");
+
+    setStatus("Error");
+
+  }
+
+}
