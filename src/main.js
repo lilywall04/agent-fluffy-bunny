@@ -7,9 +7,17 @@ const costumeBtn = document.getElementById("costumeBtn");
 const bunnyStatus = document.getElementById("bunnyStatus");
 const bunnyImg = document.getElementById("bunnyImg");
 
+// Dynamically import all bunny images
+const bunnyImages = import.meta.glob('./assets/*bunny.png', { eager: true, query: '?url', import: 'default' });
+
 let awake = false;
 let costumeIndex = 0;
 const costumes = ["🐰", "🐰🎀", "🐰🕶️", "🐰👑"];
+
+function getBunnyImageUrl(emotion) {
+  const imagePath = `./assets/${emotion}bunny.png`;
+  return bunnyImages[imagePath] || bunnyImages['./assets/Basicbunny.png'];
+}
 
 function setStatus(text) {
   bunnyStatus.textContent = text;
@@ -99,6 +107,10 @@ async function askBunny(userText) {
     const data = await response.json();
 
     addMessage("Bunny: " + data.reply, "bunny");
+
+    if (bunnyImg && data.emotion) {
+      bunnyImg.src = getBunnyImageUrl(data.emotion);
+    }
 
     setStatus("Listening");
 

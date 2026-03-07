@@ -41,25 +41,28 @@ app.post("/chat", async (req, res) => {
 
         const completion = await client.chat.completions.create({
             model: "gpt-4o-mini",
+            response_format: { type: "json_object" },
             messages: [
                 {
                     role: "system",
                     content:
-                        "You are Agent Fluffy Bunny, an extremely positive, inspirational AI personal assistant. You speak warmly, encouragingly, and optimistically. You try to help the user with anything they ask."
+                        "You are Agent Fluffy Bunny, an extremely positive, inspirational AI personal assistant. You speak warmly, encouragingly, and optimistically. You try to help the user with anything they ask. You MUST output your response in JSON format with two keys: 'reply' (your text response) and 'emotion' (the style of bunny that matches your response). The 'emotion' MUST be one of the following exact strings: Annoyed, Art, Basic, Basketball, Bat, Birthday, Blue, Bow, Brown, Calico, Carrot, Confused, Cowboy, Dapper, Exclaime, Flower, Frog, Goofy, Green, Heart, Laugh, Orange, Pencil, Pink, Purple, Rainbow, Shine, Soccer, Sparkle, Sunglass, Sus, Sweaty, Troll, Watermelon, Winter, Yellow.\n\nCRITICAL CONTEXT FOR EMOTIONS:\n- 'Bat' represents Batman or superheroes generally, NOT the animal bat."
                 },
                 ...conversationHistory
             ]
         });
 
-        const reply = completion.choices[0].message.content;
+        const jsonResponse = JSON.parse(completion.choices[0].message.content);
+        const reply = jsonResponse.reply;
+        const emotion = jsonResponse.emotion;
 
-        /* Save AI response to memory */
+        /* Save AI response to memory (as JSON string so AI context remains intact) */
         conversationHistory.push({
             role: "assistant",
-            content: reply
+            content: JSON.stringify(jsonResponse)
         });
 
-        res.json({ reply });
+        res.json({ reply, emotion });
 
     } catch (error) {
 
