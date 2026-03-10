@@ -56,13 +56,27 @@ app.post("/chat", async (req, res) => {
         const reply = jsonResponse.reply;
         const emotion = jsonResponse.emotion;
 
+        /* Generate AI voice audio */
+const speech = await client.audio.speech.create({
+    model: "gpt-4o-mini-tts",
+    voice: "shimmer",
+    input: reply
+});
+
+const audioBuffer = Buffer.from(await speech.arrayBuffer());
+const audioBase64 = audioBuffer.toString("base64");
+
         /* Save AI response to memory (as JSON string so AI context remains intact) */
         conversationHistory.push({
             role: "assistant",
             content: JSON.stringify(jsonResponse)
         });
 
-        res.json({ reply, emotion });
+        res.json({
+            reply,
+            emotion,
+            audio: audioBase64
+        });
 
     } catch (error) {
 
