@@ -35,15 +35,14 @@ function addMessage(text, who) {
   div.textContent = text;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
+  
 }
 
 function pretendBunnyReply(userText) {
   setStatus("Talking");
-  if (bunnyImg) bunnyImg.style.transform = "scale(1.05)";
 
   setTimeout(() => {
     addMessage("Bunny: You’ve got this ✨ (placeholder reply)", "bunny");
-    if (bunnyImg) bunnyImg.style.transform = "scale(1)";
     setStatus("Idle");
   }, 600);
 }
@@ -79,9 +78,7 @@ costumeBtn.addEventListener("click", () => {
   addMessage("Bunny: I'll wear a costume when you add image assets! 👗", "bunny");
 });
 
-micBtn.addEventListener("click", () => {
-  addMessage("Bunny: Mic button works later (Step 6). For now, type and send!", "bunny");
-});
+micBtn.addEventListener("click", startListening);
 
 setStatus("Idle (asleep)");
 addMessage("Bunny: Hi! Press Wake to start 🐰", "bunny");
@@ -89,9 +86,6 @@ addMessage("Bunny: Hi! Press Wake to start 🐰", "bunny");
 async function askBunny(userText) {
 
   setStatus("Thinking...");
-
-  if (bunnyImg) bunnyImg.style.transform = "scale(1.05)";
-
   try {
 
     const response = await fetch("http://localhost:3000/chat", {
@@ -107,6 +101,8 @@ async function askBunny(userText) {
     const data = await response.json();
 
     addMessage("Bunny: " + data.reply, "bunny");
+    
+    playAudio(data.audio);
 
     if (bunnyImg && data.emotion) {
       bunnyImg.src = getBunnyImageUrl(data.emotion);
@@ -114,7 +110,6 @@ async function askBunny(userText) {
 
     setStatus("Listening");
 
-    if (bunnyImg) bunnyImg.style.transform = "scale(1)";
 
   } catch (error) {
 
@@ -123,5 +118,91 @@ async function askBunny(userText) {
     setStatus("Error");
 
   }
+}
 
+function speak(text) {
+
+  const speech = new SpeechSynthesisUtterance(text);
+
+  function setVoice() {
+    const voices = speechSynthesis.getVoices();
+
+    const bunnyVoice =
+      voices.find(v => v.name.includes("Samantha")) ||
+      voices.find(v => v.name.includes("Google")) ||
+      voices.find(v => v.lang === "en-US");
+
+    if (bunnyVoice) {
+      speech.voice = bunnyVoice;
+    }
+
+    speech.rate = 1.1;
+    speech.pitch = 1.6;
+
+    speechSynthesis.speak(speech);
+  }
+
+  const voices = speechSynthesis.getVoices();
+
+  if (voices.length) {
+    setVoice();
+  } else {
+    speechSynthesis.onvoiceschanged = setVoice;
+  }
+
+}
+function startListening() {
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    addMessage("Bunny: Your browser doesn't support speech recognition.", "bunny");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+
+  setStatus("Listening...");
+
+  recognition.start();
+
+  recognition.onresult = (event) => {
+
+    const transcript = event.results[0][0].transcript;
+
+    addMessage("You: " + transcript, "you");
+
+    askBunny(transcript);
+
+  };
+
+  recognition.onerror = () => {
+    setStatus("Idle");
+    addMessage("Bunny: I couldn't hear you clearly.", "bunny");
+  };
+
+  recognition.onend = () => {
+    setStatus("Listening");
+  };
+
+}
+function playAudio(base64Audio) {
+
+  if (!base64Audio) return;
+
+  const audio = new Audio("data:audio/mp3;base64," + base64Audio);
+
+  audio.onplay = () => {
+    if (bunnyImg) bunnyImg.classList.add("bunny-speaking");
+  };
+
+  audio.onended = () => {
+    if (bunnyImg) bunnyImg.classList.remove("bunny-speaking");
+  };
+
+  audio.play();
 }

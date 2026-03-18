@@ -41,3 +41,14 @@ body {
   @apply bg-bg text-text-main font-sans min-h-screen flex items-center justify-center m-0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+/*hoping up and down when speak*/
+@keyframes bunnyHop {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+  100% { transform: translateY(0px); }
+}
+
+.bunny-speaking {
+  animation: bunnyHop 0.4s ease-in-out infinite;
+}
