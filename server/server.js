@@ -76,7 +76,8 @@ app.post("/chat", async (req, res) => {
 const speech = await client.audio.speech.create({
   model: "gpt-4o-mini-tts",
   voice: "shimmer",
-  input: reply
+  input: reply,
+  speed: 1.3
 });
 
 const audioBuffer = Buffer.from(await speech.arrayBuffer());
