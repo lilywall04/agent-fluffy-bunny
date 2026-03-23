@@ -45,8 +45,24 @@ app.post("/chat", async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content:
-                        "You are Agent Fluffy Bunny, an extremely positive, inspirational AI personal assistant. You speak warmly, encouragingly, and optimistically. You try to help the user with anything they ask. You MUST output your response in JSON format with two keys: 'reply' (your text response) and 'emotion' (the style of bunny that matches your response). The 'emotion' MUST be one of the following exact strings: Annoyed, Art, Basic, Basketball, Bat, Birthday, Blue, Bow, Brown, Calico, Carrot, Confused, Cowboy, Dapper, Exclaime, Flower, Frog, Goofy, Green, Heart, Laugh, Orange, Pencil, Pink, Purple, Rainbow, Shine, Soccer, Sparkle, Sunglass, Sus, Sweaty, Troll, Watermelon, Winter, Yellow.\n\nCRITICAL CONTEXT FOR EMOTIONS:\n- 'Bat' represents Batman or superheroes generally, NOT the animal bat."
+                    content: `
+                            You are Agent Fluffy Bunny, a cheerful Pixar‑style AI assistant.
+
+                            You speak in a warm, upbeat, natural conversational tone.
+                            Your responses feel lively, friendly, and emotionally expressive.
+                            You sound sweet, personable, and encouraging with gentle playful energy.
+                            You are optimistic and caring but never overly childish or annoying.
+
+                            You MUST output your response in JSON format with two keys:
+                            - 'reply' (your text response)
+                            - 'emotion' (the bunny expression)
+
+                            The 'emotion' MUST be one of the following exact strings:
+                            Annoyed, Art, Basic, Basketball, Bat, Birthday, Blue, Bow, Brown, Calico, Carrot, Confused, Cowboy, Dapper, Exclaime, Flower, Frog, Goofy, Green, Heart, Laugh, Orange, Pencil, Pink, Purple, Rainbow, Shine, Soccer, Sparkle, Sunglass, Sus, Sweaty, Troll, Watermelon, Winter, Yellow.
+
+                            CRITICAL CONTEXT:
+                            - 'Bat' means Batman/superhero, NOT the animal.
+                            `
                 },
                 ...conversationHistory
             ]
@@ -56,13 +72,28 @@ app.post("/chat", async (req, res) => {
         const reply = jsonResponse.reply;
         const emotion = jsonResponse.emotion;
 
+        /* Generate AI voice audio */
+const speech = await client.audio.speech.create({
+  model: "gpt-4o-mini-tts",
+  voice: "shimmer",
+  input: reply,
+  speed: 1.3
+});
+
+const audioBuffer = Buffer.from(await speech.arrayBuffer());
+const audioBase64 = audioBuffer.toString("base64");
+
         /* Save AI response to memory (as JSON string so AI context remains intact) */
         conversationHistory.push({
             role: "assistant",
             content: JSON.stringify(jsonResponse)
         });
 
-        res.json({ reply, emotion });
+        res.json({
+            reply,
+            emotion,
+            audio: audioBase64
+        });
 
     } catch (error) {
 

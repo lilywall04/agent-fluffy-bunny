@@ -1,43 +1,177 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #6c5ce7;
-  --color-bg: #f7f7ff;
-  --color-surface: #ffffff;
-  --color-text-main: #2d3436;
-  --color-text-muted: #636e72;
-  --color-border-main: #dfe6e9;
-
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-pop-in: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-  @keyframes float {
-
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  @keyframes popIn {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
+:root {
+  --bg: #05070a;
+  --panel: rgba(8, 15, 12, 0.72);
+  --panel-border: rgba(80, 255, 140, 0.18);
+  --text: #d8ffe7;
+  --user-bubble: #153325;
+  --bunny-bubble: rgba(10, 22, 17, 0.92);
 }
 
-/* We still need standard body styling if we want it global, or just use tailwind classes on body */
-body {
-  @apply bg-bg text-text-main font-sans min-h-screen flex items-center justify-center m-0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+.app-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#matrixCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 30px;
+}
+
+.chat-ui {
+  width: min(900px, 92vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.chat-hidden {
+  opacity: 0;
+  transform: translateY(30px);
+  pointer-events: none;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 10px;
+  scroll-behavior: smooth;
+}
+
+.chat-log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-log::-webkit-scrollbar-thumb {
+  background: rgba(88, 255, 147, 0.3);
+  border-radius: 999px;
+}
+
+.input-bar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.input-bar input {
+  background: rgba(5, 10, 8, 0.9);
+  color: var(--text);
+  border: 1px solid rgba(88, 255, 147, 0.18);
+  outline: none;
+  border-radius: 14px;
+  padding: 18px 20px;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+}
+
+.input-bar button {
+  border: none;
+  border-radius: 14px;
+  padding: 0 26px;
+  background: linear-gradient(180deg, #49f588 0%, #1db954 100%);
+  color: #041108;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  cursor: pointer;
+}
+
+.msg {
+  max-width: 85%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  line-height: 1.5;
+  font-size: clamp(0.98rem, 1.25vw, 1.08rem);
+  border: 1px solid rgba(88, 255, 147, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.msg-user {
+  align-self: flex-end;
+  background: var(--user-bubble);
+  color: #ebfff2;
+  border-bottom-right-radius: 6px;
+}
+
+.msg-bunny {
+  align-self: flex-start;
+  background: var(--bunny-bubble);
+  color: var(--text);
+  border-bottom-left-radius: 6px;
+}
+
+.bunny-area {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.bunny-active {
+  opacity: 1;
+}
+
+.bunny-img {
+  width: clamp(420px, 70vw, 1100px);
+  max-height: 90vh;
+  image-rendering: auto;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@keyframes bunnyHop {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+  100% { transform: translateY(0px); }
+}
+
+.bunny-speaking {
+  animation: bunnyHop 0.4s ease-in-out infinite;
 }
