@@ -41,6 +41,7 @@ function addMessage(text, who) {
   div.textContent = text;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
+  return div;
 }
 
 function showBunnySpeakingUI() {
@@ -72,6 +73,9 @@ function stopBunnySpeech() {
 }
 
 async function askBunny(userText) {
+  const placeholder = addMessage(BUNNY_PREFIX + "...", "bunny");
+  placeholder.style.opacity = "0.7";
+
   try {
     const response = await fetch(CHAT_URL, {
       method: "POST",
@@ -83,6 +87,7 @@ async function askBunny(userText) {
 
     const data = await response.json();
 
+    chatLog.removeChild(placeholder);
     addMessage(BUNNY_PREFIX + data.reply, "bunny");
 
     if (data.emotion) {
@@ -91,6 +96,7 @@ async function askBunny(userText) {
 
     playAudio(data.audio);
   } catch (error) {
+    if (chatLog.contains(placeholder)) chatLog.removeChild(placeholder);
     addMessage(BUNNY_PREFIX + "Something went wrong talking to my brain 😵", "bunny");
     console.error(error);
   }
