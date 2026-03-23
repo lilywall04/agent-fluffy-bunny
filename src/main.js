@@ -5,6 +5,17 @@ const bunnyImg = document.getElementById("bunnyImg");
 const chatUI = document.getElementById("chatUI");
 const matrixCanvas = document.getElementById("matrixCanvas");
 const bunnyArea = document.querySelector(".bunny-area");
+const costumeModal = document.getElementById("costumeModal");
+const costumeImg = document.getElementById("costumeImg");
+const btnCostumeCar = document.getElementById("btnCostumeCar");
+const btnCostumeSun = document.getElementById("btnCostumeSun");
+const btnCostumeNone = document.getElementById("btnCostumeNone");
+const repickCostumeBtn = document.getElementById("repickCostumeBtn");
+const characterStep = document.getElementById("characterStep");
+const costumeStep = document.getElementById("costumeStep");
+const previewBases = document.querySelectorAll(".preview-base");
+
+let selectedCharacterSrc = "/src/assets/Basicbunny.png";
 
 const bunnyImages = import.meta.glob("./assets/*bunny.png", {
   eager: true,
@@ -28,7 +39,7 @@ let shouldListen = true;
 
 function getBunnyImageUrl(emotion) {
   const imagePath = `./assets/${emotion}bunny.png`;
-  return bunnyImages[imagePath] || bunnyImages["./assets/Basicbunny.png"];
+  return bunnyImages[imagePath] || selectedCharacterSrc;
 }
 
 function normalizeText(text) {
@@ -49,6 +60,7 @@ function showBunnySpeakingUI() {
   chatUI.classList.add("chat-hidden");
   bunnyArea.classList.add("bunny-active");
   bunnyImg.classList.add("bunny-speaking");
+  if (costumeImg) costumeImg.classList.add("bunny-speaking");
 }
 
 function hideBunnySpeakingUI() {
@@ -56,6 +68,7 @@ function hideBunnySpeakingUI() {
   chatUI.classList.remove("chat-hidden");
   bunnyArea.classList.remove("bunny-active");
   bunnyImg.classList.remove("bunny-speaking");
+  if (costumeImg) costumeImg.classList.remove("bunny-speaking");
 }
 
 function stopCurrentAudio() {
@@ -314,7 +327,46 @@ msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
+function selectCostume(src) {
+  if (src) {
+    costumeImg.src = src;
+    costumeImg.style.display = "block";
+  } else {
+    costumeImg.style.display = "none";
+  }
+  costumeModal.classList.add("hidden");
+  chatUI.style.display = "flex"; // reveal chat
+}
+
+function selectCharacter(src) {
+  selectedCharacterSrc = src;
+  bunnyImg.src = src;
+  previewBases.forEach(img => img.src = src);
+  characterStep.classList.add("hidden");
+  costumeStep.classList.remove("hidden");
+}
+
+document.querySelectorAll(".char-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    selectCharacter(e.currentTarget.dataset.src);
+  });
+});
+
+if(btnCostumeCar) {
+  btnCostumeCar.addEventListener("click", () => selectCostume("/src/assets/car.png"));
+  btnCostumeSun.addEventListener("click", () => selectCostume("/src/assets/sunglasses.png"));
+  btnCostumeNone.addEventListener("click", () => selectCostume(null));
+}
+
 addMessage('AFB: Say "Come in Agent Fluffy Bunny" to start hands-free mode 🐰', "bunny");
+
+if (repickCostumeBtn) {
+  repickCostumeBtn.addEventListener("click", () => {
+    characterStep.classList.remove("hidden");
+    costumeStep.classList.add("hidden");
+    costumeModal.classList.remove("hidden");
+  });
+}
 
 startMatrixBackground();
 startVoiceLoop();
