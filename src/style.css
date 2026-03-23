@@ -197,6 +197,7 @@ html, body, #app {
   width: clamp(280px, 40vw, 500px);
   max-height: 80vh;
   object-fit: contain;
+  image-rendering: pixelated;
   transition: filter 0.3s ease, transform 0.3s ease;
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
 }
