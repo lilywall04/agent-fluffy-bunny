@@ -7,21 +7,48 @@ const matrixCanvas = document.getElementById("matrixCanvas");
 const bunnyArea = document.querySelector(".bunny-area");
 const costumeModal = document.getElementById("costumeModal");
 const costumeImg = document.getElementById("costumeImg");
-const btnCostumeCar = document.getElementById("btnCostumeCar");
-const btnCostumeSun = document.getElementById("btnCostumeSun");
-const btnCostumeNone = document.getElementById("btnCostumeNone");
+const layer3Img = document.getElementById("layer3Img");
+const costumeOptions = document.getElementById("costumeOptions");
+const repickCharacterBtn = document.getElementById("repickCharacterBtn");
 const repickCostumeBtn = document.getElementById("repickCostumeBtn");
 const characterStep = document.getElementById("characterStep");
 const costumeStep = document.getElementById("costumeStep");
-const previewBases = document.querySelectorAll(".preview-base");
 
 let selectedCharacterSrc = "/src/assets/Basicbunny.png";
+let selectedCostumeSrc = null;
 
-const bunnyImages = import.meta.glob("./assets/*bunny.png", {
-  eager: true,
-  query: "?url",
-  import: "default"
-});
+const costumeChoices = [
+  { label: "None", src: null },
+  { label: "Car", src: "/src/assets/car.png" },
+  { label: "Sunglasses", src: "/src/assets/sunglasses.png" },
+  { label: "Bow", src: "/src/assets/bow.png" },
+  { label: "Headset", src: "/src/assets/headset.png" },
+  { label: "Crown", src: "/src/assets/%20crown.png" },
+  { label: "Tie", src: "/src/assets/tie.png" },
+  { label: "Chain", src: "/src/assets/chain.png" },
+  { label: "Dress", src: "/src/assets/dress.png" },
+  { label: "Shirt", src: "/src/assets/shirt.png" },
+  { label: "Tutu", src: "/src/assets/tutu.png" },
+  { label: "Basket", src: "/src/assets/basket.png" }
+];
+
+const layer3Choices = {
+  hearts: "/src/assets/hearts.png",
+  carrot: "/src/assets/carrot.png",
+  laugh: "/src/assets/laugh.png",
+  flowers: "/src/assets/flowers.png",
+  sweat: "/src/assets/sweat.png",
+  shine: "/src/assets/shine.png",
+  soccer: "/src/assets/soccer.png",
+  basketball: "/src/assets/Basketball.png",
+  pencil: "/src/assets/pencil.png",
+  art: "/src/assets/art.png",
+  watermelon: "/src/assets/watermelon.png",
+  sparkle: "/src/assets/sparkle.png",
+  birthday: "/src/assets/birthday.png",
+  confused: "/src/assets/confused.png",
+  exclaim: "/src/assets/exclaim.png"
+};
 
 const WAKE_PHRASE = "come in agent fluffy bunny";
 const END_PHRASE = "over and out";
@@ -36,11 +63,6 @@ let isConversationActive = false;
 let isBunnySpeaking = false;
 let restartingRecognition = false;
 let shouldListen = true;
-
-function getBunnyImageUrl(emotion) {
-  const imagePath = `./assets/${emotion}bunny.png`;
-  return bunnyImages[imagePath] || selectedCharacterSrc;
-}
 
 function normalizeText(text) {
   return text.toLowerCase().replace(/[^\w\s]/g, "").trim();
@@ -61,6 +83,7 @@ function showBunnySpeakingUI() {
   bunnyArea.classList.add("bunny-active");
   bunnyImg.classList.add("bunny-speaking");
   if (costumeImg) costumeImg.classList.add("bunny-speaking");
+  if (layer3Img) layer3Img.classList.add("bunny-speaking");
 }
 
 function hideBunnySpeakingUI() {
@@ -69,6 +92,22 @@ function hideBunnySpeakingUI() {
   bunnyArea.classList.remove("bunny-active");
   bunnyImg.classList.remove("bunny-speaking");
   if (costumeImg) costumeImg.classList.remove("bunny-speaking");
+  if (layer3Img) layer3Img.classList.remove("bunny-speaking");
+}
+
+function selectLayer3(layer3) {
+  const src = layer3Choices[layer3];
+
+  if (src && layer3Img) {
+    layer3Img.src = src;
+    layer3Img.style.display = "block";
+    return;
+  }
+
+  if (layer3Img) {
+    layer3Img.src = "";
+    layer3Img.style.display = "none";
+  }
 }
 
 function stopCurrentAudio() {
@@ -103,14 +142,13 @@ async function askBunny(userText) {
     chatLog.removeChild(placeholder);
     addMessage(BUNNY_PREFIX + data.reply, "bunny");
 
-    if (data.emotion) {
-      bunnyImg.src = getBunnyImageUrl(data.emotion);
-    }
+    selectLayer3(data.layer3);
 
     playAudio(data.audio);
   } catch (error) {
     if (chatLog.contains(placeholder)) chatLog.removeChild(placeholder);
     addMessage(BUNNY_PREFIX + "Something went wrong talking to my brain 😵", "bunny");
+    selectLayer3("sweat");
     console.error(error);
   }
 }
@@ -327,23 +365,36 @@ msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-function selectCostume(src) {
+function selectCostume(src, { closeModal = true } = {}) {
+  selectedCostumeSrc = src;
+
   if (src) {
     costumeImg.src = src;
     costumeImg.style.display = "block";
   } else {
+    costumeImg.src = "";
     costumeImg.style.display = "none";
   }
-  costumeModal.classList.add("hidden");
-  chatUI.style.display = "flex"; // reveal chat
+
+  document.querySelectorAll(".costume-btn").forEach((button) => {
+    button.classList.toggle("is-selected", button.dataset.src === (src || ""));
+  });
+
+  if (closeModal) {
+    costumeModal.classList.add("hidden");
+    chatUI.style.display = "flex";
+  }
 }
 
 function selectCharacter(src) {
   selectedCharacterSrc = src;
   bunnyImg.src = src;
-  previewBases.forEach(img => img.src = src);
+  document.querySelectorAll(".preview-base").forEach((img) => {
+    img.src = src;
+  });
   characterStep.classList.add("hidden");
   costumeStep.classList.remove("hidden");
+  selectCostume(selectedCostumeSrc, { closeModal: false });
 }
 
 document.querySelectorAll(".char-btn").forEach(btn => {
@@ -352,21 +403,67 @@ document.querySelectorAll(".char-btn").forEach(btn => {
   });
 });
 
-if(btnCostumeCar) {
-  btnCostumeCar.addEventListener("click", () => selectCostume("/src/assets/car.png"));
-  btnCostumeSun.addEventListener("click", () => selectCostume("/src/assets/sunglasses.png"));
-  btnCostumeNone.addEventListener("click", () => selectCostume(null));
+function renderCostumeOptions() {
+  if (!costumeOptions) return;
+
+  costumeOptions.innerHTML = "";
+
+  costumeChoices.forEach(({ label, src }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "costume-btn";
+    button.dataset.src = src || "";
+
+    const preview = document.createElement("div");
+    preview.className = "costume-preview";
+
+    const base = document.createElement("img");
+    base.src = selectedCharacterSrc;
+    base.alt = "Bunny";
+    base.className = "preview-base";
+    preview.appendChild(base);
+
+    if (src) {
+      const overlay = document.createElement("img");
+      overlay.src = src;
+      overlay.alt = label;
+      overlay.className = "preview-overlay";
+      preview.appendChild(overlay);
+    }
+
+    const text = document.createElement("span");
+    text.textContent = label;
+
+    button.append(preview, text);
+    button.addEventListener("click", () => selectCostume(src));
+    costumeOptions.appendChild(button);
+  });
+
+  selectCostume(selectedCostumeSrc, { closeModal: false });
+}
+
+function openCharacterPicker() {
+  characterStep.classList.remove("hidden");
+  costumeStep.classList.add("hidden");
+  costumeModal.classList.remove("hidden");
+}
+
+function openCostumePicker() {
+  characterStep.classList.add("hidden");
+  costumeStep.classList.remove("hidden");
+  costumeModal.classList.remove("hidden");
 }
 
 addMessage('AFB: Say "Come in Agent Fluffy Bunny" to start hands-free mode 🐰', "bunny");
 
-if (repickCostumeBtn) {
-  repickCostumeBtn.addEventListener("click", () => {
-    characterStep.classList.remove("hidden");
-    costumeStep.classList.add("hidden");
-    costumeModal.classList.remove("hidden");
-  });
+if (repickCharacterBtn) {
+  repickCharacterBtn.addEventListener("click", openCharacterPicker);
 }
 
+if (repickCostumeBtn) {
+  repickCostumeBtn.addEventListener("click", openCostumePicker);
+}
+
+renderCostumeOptions();
 startMatrixBackground();
 startVoiceLoop();

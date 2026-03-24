@@ -19,6 +19,36 @@ This stores the conversation so the AI remembers previous messages
 */
 let conversationHistory = [];
 
+function inferLayer3(message, reply = "") {
+    const combined = `${message} ${reply}`.toLowerCase();
+
+    const rules = [
+        { layer3: "birthday", keywords: ["birthday", "celebration"] },
+        { layer3: "basketball", keywords: ["basketball"] },
+        { layer3: "soccer", keywords: ["soccer"] },
+        { layer3: "hearts", keywords: ["love", "happy", "caring", "thoughtful"] },
+        { layer3: "carrot", keywords: ["hungry", "favorite food", "garden"] },
+        { layer3: "laugh", keywords: ["joke", "funny", "silly", "goofy"] },
+        { layer3: "flowers", keywords: ["fun", "summer", "spring"] },
+        { layer3: "sweat", keywords: ["nervous", "confused", "backend not responding", "not resonding"] },
+        { layer3: "shine", keywords: ["good question", "smart", "correct"] },
+        { layer3: "pencil", keywords: ["school", "class", "homework", "work"] },
+        { layer3: "art", keywords: ["creative", "art", "painting", "drawing", "artist"] },
+        { layer3: "watermelon", keywords: ["food", "hungry", "summer"] },
+        { layer3: "sparkle", keywords: ["suggestion", "suggestions", "suggesetion", "suggesetions"] },
+        { layer3: "confused", keywords: ["lost", "not understanding", "weird"] },
+        { layer3: "exclaim", keywords: ["excited", "interested"] }
+    ];
+
+    for (const rule of rules) {
+        if (rule.keywords.some((keyword) => combined.includes(keyword))) {
+            return rule.layer3;
+        }
+    }
+
+    return "none";
+}
+
 
 /* Test homepage route */
 app.get("/", (req, res) => {
@@ -55,13 +85,29 @@ app.post("/chat", async (req, res) => {
 
                             You MUST output your response in JSON format with two keys:
                             - 'reply' (your text response)
-                            - 'emotion' (the bunny expression)
+                            - 'layer3' (the reaction overlay)
 
-                            The 'emotion' MUST be one of the following exact strings:
-                            Annoyed, Art, Basic, Basketball, Bat, Birthday, Blue, Bow, Brown, Calico, Carrot, Confused, Cowboy, Dapper, Exclaime, Flower, Frog, Goofy, Green, Heart, Laugh, Orange, Pencil, Pink, Purple, Rainbow, Shine, Soccer, Sparkle, Sunglass, Sus, Sweaty, Troll, Watermelon, Winter, Yellow.
+                            The 'layer3' MUST be one of these exact strings:
+                            none, hearts, carrot, laugh, flowers, sweat, shine, soccer, basketball, pencil, art, watermelon, sparkle, birthday, confused, exclaim.
 
-                            CRITICAL CONTEXT:
-                            - 'Bat' means Batman/superhero, NOT the animal.
+                            Use this guide when choosing 'layer3':
+                            - hearts: love, happy, caring, thoughtful
+                            - carrot: hungry, favorite food, garden
+                            - laugh: joke, funny, silly, goofy
+                            - flowers: fun, summer, spring
+                            - sweat: nervous, confused, backend not responding
+                            - shine: good question, smart, correct
+                            - soccer: sports, soccer, hobbies
+                            - basketball: sports, basketball, hobbies
+                            - pencil: school, class, homework, work
+                            - art: creative, art, painting, drawing, artist
+                            - watermelon: food, hungry, summer
+                            - sparkle: suggestions
+                            - birthday: birthday, celebration
+                            - confused: lost, not understanding, weird
+                            - exclaim: excited, interested
+
+                            Choose 'none' if no overlay clearly fits.
                             `
                 },
                 ...conversationHistory
@@ -70,7 +116,7 @@ app.post("/chat", async (req, res) => {
 
         const jsonResponse = JSON.parse(completion.choices[0].message.content);
         const reply = jsonResponse.reply;
-        const emotion = jsonResponse.emotion;
+        const layer3 = jsonResponse.layer3 || inferLayer3(message, reply);
 
         /* Generate AI voice audio */
 const speech = await client.audio.speech.create({
@@ -86,12 +132,12 @@ const audioBase64 = audioBuffer.toString("base64");
         /* Save AI response to memory (as JSON string so AI context remains intact) */
         conversationHistory.push({
             role: "assistant",
-            content: JSON.stringify(jsonResponse)
+            content: JSON.stringify({ reply, layer3 })
         });
 
         res.json({
             reply,
-            emotion,
+            layer3,
             audio: audioBase64
         });
 
@@ -100,7 +146,8 @@ const audioBase64 = audioBuffer.toString("base64");
         console.error(error);
 
         res.json({
-            reply: "Sorry! My bunny brain had trouble thinking."
+            reply: "Sorry! My bunny brain had trouble thinking.",
+            layer3: "sweat"
         });
 
     }

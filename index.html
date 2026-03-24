@@ -34,30 +34,9 @@
         </div>
       </div>
 
-      <div class="costume-modal-content hidden" id="costumeStep">
+      <div class="costume-modal-content hidden max-w-2xl" id="costumeStep">
         <h2>Select a Costume!</h2>
-        <div class="costume-options">
-          <button id="btnCostumeCar" class="costume-btn">
-            <div class="costume-preview">
-              <img src="/src/assets/Basicbunny.png" alt="Bunny" class="preview-base" />
-              <img src="/src/assets/car.png" alt="Car" class="preview-overlay" />
-            </div>
-            <span>Car</span>
-          </button>
-          <button id="btnCostumeSun" class="costume-btn">
-            <div class="costume-preview">
-              <img src="/src/assets/Basicbunny.png" alt="Bunny" class="preview-base" />
-              <img src="/src/assets/sunglasses.png" alt="Sunglasses" class="preview-overlay" />
-            </div>
-            <span>Sunglasses</span>
-          </button>
-          <button id="btnCostumeNone" class="costume-btn">
-            <div class="costume-preview">
-              <img src="/src/assets/Basicbunny.png" alt="Bunny" class="preview-base" />
-            </div>
-            <span>None</span>
-          </button>
-        </div>
+        <div class="costume-options costume-options-modal" id="costumeOptions"></div>
       </div>
     </div>
 
@@ -66,6 +45,7 @@
         <div id="chatLog" class="chat-log"></div>
 
         <div class="input-bar">
+          <button id="repickCharacterBtn" class="icon-btn" title="Change Character">🐰</button>
           <button id="repickCostumeBtn" class="icon-btn" title="Change Costume">👕</button>
           <input
             id="msgInput"
@@ -84,6 +64,7 @@
           class="bunny-img"
         />
         <img id="costumeImg" src="" alt="Costume" class="costume-img" style="display: none;" />
+        <img id="layer3Img" src="" alt="Reaction overlay" class="layer3-img" style="display: none;" />
       </div>
     </div>
   </div>
