@@ -12,11 +12,41 @@
   <div id="app" class="app-shell">
     <canvas id="matrixCanvas"></canvas>
 
+    <!-- Selection Modal -->
+    <div id="costumeModal" class="costume-modal">
+      <div class="costume-modal-content max-w-2xl" id="characterStep">
+        <h2>Select a Character!</h2>
+        <div class="character-grid">
+          <button class="char-btn" data-src="/src/assets/Bluebunny.png"><img src="/src/assets/Bluebunny.png" /><span>Blue</span></button>
+          <button class="char-btn" data-src="/src/assets/Brownbunny.png"><img src="/src/assets/Brownbunny.png" /><span>Brown</span></button>
+          <button class="char-btn" data-src="/src/assets/Calicobunny.png"><img src="/src/assets/Calicobunny.png" /><span>Calico</span></button>
+          <button class="char-btn" data-src="/src/assets/Frogbunny.png"><img src="/src/assets/Frogbunny.png" /><span>Frog</span></button>
+          <button class="char-btn" data-src="/src/assets/Dapperbunny.png"><img src="/src/assets/Dapperbunny.png" /><span>Dapper</span></button>
+          <button class="char-btn" data-src="/src/assets/RainbowBunny.png"><img src="/src/assets/RainbowBunny.png" /><span>Rainbow</span></button>
+          <button class="char-btn" data-src="/src/assets/Yellowbunny.png"><img src="/src/assets/Yellowbunny.png" /><span>Yellow</span></button>
+          <button class="char-btn" data-src="/src/assets/Greenbunny.png"><img src="/src/assets/Greenbunny.png" /><span>Green</span></button>
+          <button class="char-btn" data-src="/src/assets/Orangebunny.png"><img src="/src/assets/Orangebunny.png" /><span>Orange</span></button>
+          <button class="char-btn" data-src="/src/assets/Purplebunny.png"><img src="/src/assets/Purplebunny.png" /><span>Purple</span></button>
+          <button class="char-btn" data-src="/src/assets/Pinkbunny.png"><img src="/src/assets/Pinkbunny.png" /><span>Pink</span></button>
+          <button class="char-btn" data-src="/src/assets/Batbunny.png"><img src="/src/assets/Batbunny.png" /><span>Bat</span></button>
+          <button class="char-btn" data-src="/src/assets/Cowboybunny.png"><img src="/src/assets/Cowboybunny.png" /><span>Cowboy</span></button>
+          <button class="char-btn" data-src="/src/assets/Winterbunny.png"><img src="/src/assets/Winterbunny.png" /><span>Winter</span></button>
+        </div>
+      </div>
+
+      <div class="costume-modal-content hidden max-w-2xl" id="costumeStep">
+        <h2>Select a Costume!</h2>
+        <div class="costume-options costume-options-modal" id="costumeOptions"></div>
+      </div>
+    </div>
+
     <div class="overlay">
-      <div class="chat-ui" id="chatUI">
+      <div class="chat-ui" id="chatUI" style="display: none;">
         <div id="chatLog" class="chat-log"></div>
 
         <div class="input-bar">
+          <button id="repickCharacterBtn" class="icon-btn" title="Change Character">🐰</button>
+          <button id="repickCostumeBtn" class="icon-btn" title="Change Costume">👕</button>
           <input
             id="msgInput"
             type="text"
@@ -33,6 +63,8 @@
           alt="Agent Fluffy Bunny"
           class="bunny-img"
         />
+        <img id="costumeImg" src="" alt="Costume" class="costume-img" style="display: none;" />
+        <img id="layer3Img" src="" alt="Reaction overlay" class="layer3-img" style="display: none;" />
       </div>
     </div>
   </div>
