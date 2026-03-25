@@ -47,7 +47,11 @@ const layer3Choices = {
   sparkle: "/src/assets/sparkle.png",
   birthday: "/src/assets/birthday.png",
   confused: "/src/assets/confused.png",
-  exclaim: "/src/assets/exclaim.png"
+  exclaim: "/src/assets/exclaim.png",
+  tulip: "/src/assets/tulip.png",
+  purpstar: "/src/assets/purpstar.png",
+  moon: "/src/assets/moon.png",
+  beer: "/src/assets/beer.png"
 };
 
 const WAKE_PHRASE = "come in agent fluffy bunny";
