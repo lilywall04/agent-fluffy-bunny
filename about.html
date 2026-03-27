@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About The Team</title>
+  <link rel="icon" type="image/png" href="/Basicbunny.png" />
+  <style>
+    :root {
+      --bg: #040706;
+      --panel: rgba(9, 20, 14, 0.82);
+      --border: rgba(88, 255, 147, 0.24);
+      --text: #e8fcf0;
+      --muted: #9fd8b1;
+      --accent: #58ff93;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(19, 80, 47, 0.24), transparent 36%),
+        linear-gradient(180deg, #040706 0%, #07110b 100%);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+
+    .card {
+      width: min(860px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: clamp(24px, 4vw, 42px);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(16px);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.05;
+    }
+
+    .intro {
+      margin: 0 auto 36px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 64ch;
+      text-align: center;
+    }
+
+    .profiles {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .profile-card {
+      background: linear-gradient(180deg, rgba(10, 24, 16, 0.84), rgba(5, 12, 8, 0.76));
+      border: 1px solid rgba(88, 255, 147, 0.16);
+      border-radius: 26px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.26);
+    }
+
+    .profile-image {
+      width: min(100%, 320px);
+      height: 320px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      border-radius: 28px;
+      background: rgba(2, 8, 5, 0.75);
+      border: 1px solid rgba(88, 255, 147, 0.18);
+      padding: 20px;
+      filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.4));
+      margin: 0 auto 18px;
+    }
+
+    .profile-name {
+      margin: 0 0 6px;
+      font-size: 1.65rem;
+      line-height: 1.1;
+    }
+
+    .profile-role {
+      margin: 0 0 18px;
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .profile-copy {
+      text-align: left;
+      background: rgba(4, 10, 7, 0.52);
+      border: 1px solid rgba(88, 255, 147, 0.12);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .profile-copy p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .placeholder-list {
+      margin: 12px 0 0;
+      padding-left: 18px;
+    }
+
+    .placeholder-label {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .panel {
+      background: rgba(4, 10, 7, 0.58);
+      border: 1px solid rgba(88, 255, 147, 0.14);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+    }
+
+    .panel p,
+    .panel li {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 24px;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(88, 255, 147, 0.45);
+      padding-bottom: 4px;
+    }
+
+    .inline-link {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(88, 255, 147, 0.45);
+      padding-bottom: 2px;
+    }
+
+    @media (max-width: 720px) {
+      .profiles,
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-image {
+        width: min(100%, 240px);
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <p class="eyebrow">About The Team</p>
+      <h1>Meet The Humans Behind Agent Fluffy Bunny.</h1>
+
+      <section class="profiles">
+        <article class="profile-card">
+          <img class="profile-image" src="/src/assets/lilyBunny.PNG" alt="Lily bunny profile" />
+          <h2 class="profile-name">Lily</h2>
+          <p class="profile-role">Developer</p>
+          <div class="profile-copy">
+            <p>Computer science-software development student minoring in data science.</p>
+            <ul class="placeholder-list">
+              <li><span class="placeholder-label">Role: </span>Currently working as a frontend developer</li>
+              <li><span class="placeholder-label">Education: </span> University of Central Missouri</li>
+              <li><span class="placeholder-label">Favorite Part: </span>The creativity that this project allows.</li>
+              <li><span class="placeholder-label">Fun Fact: </span>Each fluffy bunny and asset were hand drawn.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="profile-card">
+          <img class="profile-image" src="/src/assets/jordanBunny.PNG" alt="Jordan bunny profile" />
+          <h2 class="profile-name">Jordan</h2>
+          <p class="profile-role">Developer</p>
+          <div class="profile-copy">
+            <p>Write a short intro here about your teammate, their strengths, and what they brought to the project.</p>
+            <ul class="placeholder-list">
+              <li><span class="placeholder-label">Role: </span>Add teammate title or focus area</li>
+              <li><span class="placeholder-label">Education: </span> Add a few standout skills</li>
+              <li><span class="placeholder-label">Favorite Part: </span> Add what they helped create</li>
+              <li><span class="placeholder-label">Fun Fact: </span> Add something personal or memorable</li>
+            </ul>
+          </div>
+        </article>
+      </section>
+
+      <section class="bottom-grid">
+        <section class="panel">
+          <h2>Project Notes</h2>
+          <ul>
+            <li>What inspired this project</li>
+            <li>What each of you contributed</li>
+            <li>Favorite features or future ideas</li>
+            <li>Anything fun you want visitors to know about the build process</li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2>Links</h2>
+          <p>Add portfolio links, GitHub profiles, LinkedIn pages, or anything else you want people to visit.</p>
+          <ul class="placeholder-list">
+            <li><a class="inline-link" href="https://github.com/lilywall04">Lily's GitHub</a></li>
+            <li><a class="inline-link" href="https://github.com/jordan-as-a-student">Jordan's GitHub</a></li>
+            <li>Project: add repo, demo, or presentation links here</li>
+          </ul>
+        </section>
+      </section>
+
+      <a class="back-link" href="/">Back To Home</a>
+    </section>
+  </main>
+</body>
+</html>
