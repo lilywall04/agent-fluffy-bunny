@@ -4,6 +4,7 @@ export const LOGO_SRC = asset("AFBLogo.PNG");
 export const DEFAULT_CHARACTER_SRC = asset("Basicbunny.png");
 
 export const CHARACTER_CHOICES = [
+  { label: "Basic", src: asset("Basicbunny.png") },
   { label: "Blue", src: asset("Bluebunny.png") },
   { label: "Brown", src: asset("Brownbunny.png") },
   { label: "Calico", src: asset("Calicobunny.png") },
