@@ -12,8 +12,24 @@
   <div id="app" class="app-shell">
     <canvas id="matrixCanvas"></canvas>
 
+    <section id="homeScreen" class="home-screen">
+      <div class="home-panel">
+        <img
+          id="homeLogo"
+          class="home-logo"
+          src="/src/assets/AFBLogo.PNG"
+          alt="Agent Fluffy Bunny"
+        />
+        <div class="home-title" aria-label="Agent Fluffy Bunny">Agent Fluffy Bunny</div>
+        <div id="homeCarousel" class="home-carousel" aria-label="Character bunny carousel"></div>
+        <button id="enterSelectionBtn" class="home-cta" type="button">
+          Go To Character Selection
+        </button>
+      </div>
+    </section>
+
     <!-- Selection Modal -->
-    <div id="costumeModal" class="costume-modal">
+    <div id="costumeModal" class="costume-modal hidden">
       <div class="costume-modal-content max-w-2xl" id="characterStep">
         <h2>Select a Character!</h2>
         <div class="character-grid">
@@ -44,7 +60,7 @@
       </div>
     </div>
 
-    <div class="overlay">
+    <div class="overlay overlay-hidden" id="appOverlay">
       <div class="chat-ui" id="chatUI" style="display: none;">
         <div id="chatLog" class="chat-log"></div>
 
