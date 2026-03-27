@@ -5,6 +5,7 @@ const bunnyImg = document.getElementById("bunnyImg");
 const chatUI = document.getElementById("chatUI");
 const matrixCanvas = document.getElementById("matrixCanvas");
 const bunnyArea = document.querySelector(".bunny-area");
+const appOverlay = document.getElementById("appOverlay");
 const costumeModal = document.getElementById("costumeModal");
 const costumeImg = document.getElementById("costumeImg");
 const layer3Img = document.getElementById("layer3Img");
@@ -13,6 +14,9 @@ const repickCharacterBtn = document.getElementById("repickCharacterBtn");
 const repickCostumeBtn = document.getElementById("repickCostumeBtn");
 const characterStep = document.getElementById("characterStep");
 const costumeStep = document.getElementById("costumeStep");
+const homeScreen = document.getElementById("homeScreen");
+const homeCarousel = document.getElementById("homeCarousel");
+const enterSelectionBtn = document.getElementById("enterSelectionBtn");
 
 let selectedCharacterSrc = "/src/assets/Basicbunny.png";
 let selectedCostumeSrc = null;
@@ -67,6 +71,28 @@ let isConversationActive = false;
 let isBunnySpeaking = false;
 let restartingRecognition = false;
 let shouldListen = true;
+let carouselAngle = 0;
+let carouselVelocity = 0;
+let carouselTilt = 0;
+let carouselFrame = null;
+
+function showMainApp() {
+  if (appOverlay) {
+    appOverlay.classList.remove("overlay-hidden");
+  }
+}
+
+function hideMainApp() {
+  if (appOverlay) {
+    appOverlay.classList.add("overlay-hidden");
+  }
+}
+
+function hideHomeScreen() {
+  if (homeScreen) {
+    homeScreen.classList.add("hidden");
+  }
+}
 
 function normalizeText(text) {
   return text.toLowerCase().replace(/[^\w\s]/g, "").trim();
@@ -386,6 +412,7 @@ function selectCostume(src, { closeModal = true } = {}) {
 
   if (closeModal) {
     costumeModal.classList.add("hidden");
+    showMainApp();
     chatUI.style.display = "flex";
   }
 }
@@ -447,15 +474,123 @@ function renderCostumeOptions() {
 }
 
 function openCharacterPicker() {
+  hideHomeScreen();
+  hideMainApp();
   characterStep.classList.remove("hidden");
   costumeStep.classList.add("hidden");
   costumeModal.classList.remove("hidden");
 }
 
 function openCostumePicker() {
+  hideHomeScreen();
+  hideMainApp();
   characterStep.classList.add("hidden");
   costumeStep.classList.remove("hidden");
   costumeModal.classList.remove("hidden");
+}
+
+function renderHomeCarousel() {
+  if (!homeCarousel) return;
+
+  const characterButtons = Array.from(document.querySelectorAll(".char-btn"));
+
+  homeCarousel.innerHTML = "";
+
+  characterButtons.forEach((button, index) => {
+    const card = document.createElement("button");
+    const image = button.querySelector("img");
+    const label = button.querySelector("span")?.textContent || "Bunny";
+
+    card.type = "button";
+    card.className = "home-bunny-card";
+    card.dataset.index = String(index);
+    card.dataset.src = button.dataset.src;
+    card.setAttribute("aria-label", `Choose ${label}`);
+
+    const bunny = document.createElement("img");
+    bunny.className = "home-bunny-image";
+    bunny.src = image?.src || button.dataset.src;
+    bunny.alt = label;
+
+    card.appendChild(bunny);
+    card.addEventListener("click", () => {
+      hideHomeScreen();
+      hideMainApp();
+      selectCharacter(button.dataset.src);
+      costumeModal.classList.remove("hidden");
+    });
+
+    homeCarousel.appendChild(card);
+  });
+}
+
+function setupHomeCarouselMotion() {
+  if (!homeScreen || !homeCarousel) return;
+
+  const cards = Array.from(homeCarousel.querySelectorAll(".home-bunny-card"));
+  if (!cards.length) return;
+
+  const positionCards = () => {
+    const radius = Math.max(220, Math.min(window.innerWidth * 0.28, 430));
+    const step = (Math.PI * 2) / cards.length;
+
+    cards.forEach((card, index) => {
+      const angle = carouselAngle + index * step;
+      const x = Math.sin(angle) * radius;
+      const z = Math.cos(angle) * radius;
+      const normalizedDepth = (z + radius) / (2 * radius);
+      const scale = 0.62 + normalizedDepth * 0.58;
+      const opacity = 0.3 + normalizedDepth * 0.75;
+      const y = Math.sin(carouselTilt) * 18;
+
+      card.style.transform = `translate(-50%, -50%) translate3d(${x}px, ${y}px, ${z}px) scale(${scale})`;
+      card.style.opacity = opacity.toFixed(3);
+      card.style.zIndex = String(Math.round(normalizedDepth * 100));
+    });
+  };
+
+  const animate = () => {
+    carouselAngle += carouselVelocity;
+    carouselVelocity *= 0.96;
+    carouselTilt *= 0.9;
+
+    if (Math.abs(carouselVelocity) < 0.00008) {
+      carouselVelocity = 0;
+    }
+
+    positionCards();
+    carouselFrame = requestAnimationFrame(animate);
+  };
+
+  let lastX = null;
+
+  homeScreen.addEventListener("mousemove", (event) => {
+    const rect = homeScreen.getBoundingClientRect();
+    const mouseX = (event.clientX - rect.left) / rect.width - 0.5;
+    const mouseY = (event.clientY - rect.top) / rect.height - 0.5;
+
+    if (lastX !== null) {
+      carouselVelocity += (mouseX - lastX) * 0.16;
+    } else {
+      carouselVelocity += mouseX * 0.012;
+    }
+
+    carouselTilt = mouseY;
+    lastX = mouseX;
+  });
+
+  homeScreen.addEventListener("mouseleave", () => {
+    lastX = null;
+    carouselVelocity += carouselVelocity >= 0 ? 0.003 : -0.003;
+    carouselTilt = 0;
+  });
+
+  window.addEventListener("resize", positionCards);
+  positionCards();
+  if (carouselFrame) {
+    cancelAnimationFrame(carouselFrame);
+  }
+  carouselFrame = requestAnimationFrame(animate);
 }
 
 addMessage('AFB: Say "Come in Agent Fluffy Bunny" to start hands-free mode 🐰', "bunny");
@@ -468,6 +603,13 @@ if (repickCostumeBtn) {
   repickCostumeBtn.addEventListener("click", openCostumePicker);
 }
 
+if (enterSelectionBtn) {
+  enterSelectionBtn.addEventListener("click", openCharacterPicker);
+}
+
+hideMainApp();
+renderHomeCarousel();
+setupHomeCarouselMotion();
 renderCostumeOptions();
 startMatrixBackground();
 startVoiceLoop();
