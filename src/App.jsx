@@ -13,6 +13,8 @@ import {
   WAKE_PHRASE
 } from "./data";
 
+let pendingAction = null;
+
 function createId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -23,6 +25,71 @@ function createId() {
 
 function normalizeText(text) {
   return text.toLowerCase().replace(/[^\w\s]/g, "").trim();
+}
+
+function isAffirmative(text) {
+  return /^(yes|yeah|yep|sure|ok|okay|do it|open it|sounds good|that works|correct)(\s+please)?$/.test(
+    normalizeText(text)
+  );
+}
+
+function isNegative(text) {
+  return /^(no|nope|nah|cancel|dont|do not|not now)(\s+thanks)?$/.test(normalizeText(text));
+}
+
+function looksLikeWebsiteRequest(text) {
+  return /^(?:please\s+)?(?:open|go to|launch|visit|take me to|bring up)\s+.+$/i.test(text)
+    || /^(?:please\s+)?search(?:\s+for)?\s+.+?\s+on\s+.+$/i.test(text);
+}
+
+function createPrimedActionWindow(text) {
+  if (!looksLikeWebsiteRequest(text)) return null;
+
+  const primedWindow = window.open("", "_blank");
+  if (!primedWindow) return null;
+
+  try {
+    primedWindow.document.title = "Agent Fluffy Bunny";
+    primedWindow.document.body.textContent = "Opening your request...";
+  } catch (error) {
+    console.log("primed window setup failed:", error);
+  }
+
+  return primedWindow;
+}
+
+function closePrimedActionWindow(primedWindow) {
+  if (!primedWindow || primedWindow.closed) return;
+
+  try {
+    primedWindow.close();
+  } catch (error) {
+    console.log("primed window close failed:", error);
+  }
+}
+
+function executeAction(action, data, primedWindow = null) {
+  if (action === "open_url" && data?.url) {
+    if (primedWindow && !primedWindow.closed) {
+      primedWindow.location.href = data.url;
+      primedWindow.focus?.();
+      return true;
+    }
+
+    const openedWindow = window.open(data.url, "_blank");
+    if (openedWindow) {
+      openedWindow.focus?.();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function buildActionReply(data) {
+  const siteName = data?.siteName || "that website";
+  const description = data?.description ? ` - ${data.description}` : "";
+  return `${BUNNY_PREFIX}Alright, opening ${siteName}${description}.`;
 }
 
 function HomeScreen({ onStart, onQuickSelect }) {
@@ -442,7 +509,7 @@ export default function App() {
     });
   };
 
-  const askBunny = async (userText) => {
+  const askBunny = async (userText, primedWindow = null) => {
     const placeholderId = appendMessage(`${BUNNY_PREFIX}...`, "bunny", { pending: true });
 
     try {
@@ -464,6 +531,24 @@ export default function App() {
         )
       );
 
+      if (data.needsConfirmation && data.action && data.data) {
+        closePrimedActionWindow(primedWindow);
+        pendingAction = {
+          action: data.action,
+          data: data.data
+        };
+      } else {
+        pendingAction = null;
+
+        if (data.action && data.data) {
+          if (!executeAction(data.action, data.data, primedWindow)) {
+            closePrimedActionWindow(primedWindow);
+          }
+        } else {
+          closePrimedActionWindow(primedWindow);
+        }
+      }
+
       setLayer3Src(data.layer3 ? LAYER3_CHOICES[data.layer3] || null : null);
       playAudio(data.audio);
     } catch (error) {
@@ -481,17 +566,56 @@ export default function App() {
         )
       );
 
+      closePrimedActionWindow(primedWindow);
       setLayer3Src(LAYER3_CHOICES.sweat);
     }
+  };
+
+  const handlePendingActionResponse = (userText) => {
+    if (!pendingAction) return false;
+
+    if (isAffirmative(userText)) {
+      const actionToRun = pendingAction;
+      pendingAction = null;
+
+      appendMessage(`You: ${userText}`, "user");
+      executeAction(actionToRun.action, actionToRun.data);
+      appendMessage(buildActionReply(actionToRun.data), "bunny");
+      setLayer3Src(LAYER3_CHOICES.sparkle);
+      return true;
+    }
+
+    if (isNegative(userText)) {
+      pendingAction = null;
+
+      appendMessage(`You: ${userText}`, "user");
+      appendMessage(`${BUNNY_PREFIX}Okay, I will leave it closed.`, "bunny");
+      setLayer3Src(LAYER3_CHOICES.confused);
+      return true;
+    }
+
+    return false;
+  };
+
+  const submitUserText = (text, options = {}) => {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    if (handlePendingActionResponse(trimmedText)) {
+      return;
+    }
+
+    appendMessage(`You: ${trimmedText}`, "user");
+    const primedWindow = options.userInitiated ? createPrimedActionWindow(trimmedText) : null;
+    askBunny(trimmedText, primedWindow);
   };
 
   const sendMessage = () => {
     const text = inputValue.trim();
     if (!text) return;
 
-    appendMessage(`You: ${text}`, "user");
     setInputValue("");
-    askBunny(text);
+    submitUserText(text, { userInitiated: true });
   };
 
   useEffect(() => {
@@ -544,8 +668,7 @@ export default function App() {
           continue;
         }
 
-        appendMessage(`You: ${transcript}`, "user");
-        askBunny(transcript);
+        submitUserText(transcript);
       }
     };
 
@@ -620,6 +743,7 @@ export default function App() {
 
   const returnHome = () => {
     stopBunnySpeech();
+    pendingAction = null;
     setIsConversationActive(false);
     setView("home");
   };
