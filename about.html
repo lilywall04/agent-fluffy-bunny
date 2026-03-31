@@ -186,14 +186,47 @@
     }
 
     @media (max-width: 720px) {
+      .page {
+        padding: 18px 12px;
+        align-items: flex-start;
+      }
+
+      .card {
+        border-radius: 22px;
+        padding: 20px 16px;
+      }
+
+      h1 {
+        font-size: 1.85rem;
+      }
+
       .profiles,
       .bottom-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .profile-card {
+        padding: 18px;
+        border-radius: 22px;
       }
 
       .profile-image {
         width: min(100%, 240px);
         height: 240px;
+        padding: 16px;
+      }
+
+      .profile-copy {
+        padding: 14px;
+      }
+
+      .placeholder-list {
+        padding-left: 16px;
+      }
+
+      .link-item {
+        margin-left: 10px;
       }
     }
   </style>
