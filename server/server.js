@@ -19,199 +19,310 @@ This stores the conversation so the AI remembers previous messages
 */
 let conversationHistory = [];
 
+const HOPECORE_QUOTES = [
+    {
+        text: `You only need 1 hour.
+
+1 hour of building. 1 hour of writing. 1 hour of lifting. 1 hour of studying. 1 hour of anything but distracting yourself from the life you are trying to change.
+
+1 hour feels like nothing until you look back 365 hours later and everything's changed.`,
+        author: "dan koe on substack"
+    },
+    {
+        text: `This is the way.
+
+Quit brain rot. Read books. Watch classics. Keep a to-do list. Turn off notifications. Eat without screens. Train your body. Clean your space. Take your work seriously. Eat real food. Help others. Walk more. Create » consume. Spend time with loved ones. Travel to new places. Experience the only life you have.`,
+        author: "FRIEND on substack"
+    },
+    {
+        text: `I came across a quote that said:
+
+"You can seem like a millionaire to one person and a homeless person to the next. The ants think you are a giant, and the trees don't even notice you. You think you have a boring life, but the next person might be striving for your lifestyle.
+
+Comparison is the thief of joy, so stay kind and keep loving life. Life is all just a big game of perspective."`,
+        author: "little reminder on substack"
+    },
+    {
+        text: `Every time you delay, you reinforce the habit of delay.
+
+Every time you act, you reinforce the habit of action.
+
+You are always solidifying something.
+
+Every action or inaction casts a vote for the person you’re becoming.
+
+Vote wisely.`,
+        author: "elevate on substack"
+    },
+    {
+        text: `We were meant to create not to consume. That's why we are sad when we do nothing.`,
+        author: "teodoraa on substack"
+    },
+    {
+        text: `At some point you have to tell yourself “this is not an experience I want to keep having” and stop entertaining things that don’t benefit you in any way, shape or form.`,
+        author: "pathsofstoicism on substack"
+    },
+    {
+        text: `Make it exist first, make it good later`,
+        author: "pearly a on substack"
+    },
+    {
+        text: `You attract what you are and you create what you think about.
+
+Act like the person you want to become. Think like the person you want to become.
+
+Nothing changes in your life unless you make the decision and commitment to change it.
+
+Hold an image in your mind of how you wish to see yourself living.
+
+Visualize it every day and you will unconsciously start to do things that will move you towards that goal.`,
+        author: "pathsofstoicism on substack"
+    },
+    {
+        text: `If I am worth anything later, I am worth something now. For wheat is wheat, even if people think it is a grass in the beginning.`,
+        author: "Van Gough"
+    },
+    {
+        text: `It always seems impossible until it’s done.`,
+        author: "Nelson Mandela"
+    },
+    {
+        text: `You must do the thing you think you cannot do.`,
+        author: "Eleanor Roosevelt"
+    },
+    {
+        text: `Act as if what you do makes a difference. It does.`,
+        author: "William James"
+    },
+    {
+        text: `Turn your wounds into wisdom.`,
+        author: "Oprah Winfrey"
+    },
+    {
+        text: `If you’re going through hell, keep going.`,
+        author: "Winston Churchill"
+    },
+    {
+        text: `We are all in the gutter, but some of us are looking at the stars.`,
+        author: "Oscar Wilde"
+    },
+    {
+        text: `In the middle of every difficulty lies opportunity.`,
+        author: "Albert Einstein"
+    },
+    {
+        text: `You do not find the happy life. You make it.`,
+        author: "Camilla Eyring Kimball"
+    },
+    {
+        text: `Nothing will work unless you do.`,
+        author: "Maya Angelou"
+    },
+    {
+        text: `The soul becomes dyed with the color of its thoughts.`,
+        author: "Marcus Aurelius"
+    },
+    {
+        text: `We are all broken, that’s how the light gets in.`,
+        author: "Ernest Hemingway"
+    }
+];
+
 const WEBSITE_MAP = {
     youtube: {
         name: "YouTube",
-        url: "https://youtube.com",
+        url: "https://www.youtube.com/",
         description: "a video streaming and content platform",
         domain: "youtube.com",
         buildSearchUrl: (query) => `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
     },
     tiktok: {
         name: "TikTok",
-        url: "https://tiktok.com",
+        url: "https://www.tiktok.com/",
         description: "a short-form video and social media platform",
         domain: "tiktok.com"
     },
     substack: {
         name: "Substack",
-        url: "https://substack.com",
+        url: "https://substack.com/",
         description: "a platform for newsletters and independent writing",
         domain: "substack.com"
     },
     google: {
         name: "Google",
-        url: "https://google.com",
+        url: "https://www.google.com/",
         description: "a search engine for finding information online",
         domain: "google.com",
         buildSearchUrl: (query) => `https://www.google.com/search?q=${encodeURIComponent(query)}`
     },
     spotify: {
         name: "Spotify",
-        url: "https://open.spotify.com",
+        url: "https://open.spotify.com/",
         description: "a music streaming service",
         domain: "open.spotify.com",
         buildSearchUrl: (query) => `https://open.spotify.com/search/${encodeURIComponent(query)}`
     },
     netflix: {
         name: "Netflix",
-        url: "https://netflix.com",
+        url: "https://www.netflix.com/",
         description: "a streaming service for movies and shows",
         domain: "netflix.com"
     },
     hulu: {
         name: "Hulu",
-        url: "https://hulu.com",
+        url: "https://www.hulu.com/",
         description: "a TV and movie streaming platform",
         domain: "hulu.com"
     },
     amazon: {
         name: "Amazon",
-        url: "https://amazon.com",
+        url: "https://www.amazon.com/",
         description: "an online shopping and services platform",
         domain: "amazon.com",
         buildSearchUrl: (query) => `https://www.amazon.com/s?k=${encodeURIComponent(query)}`
     },
     instagram: {
         name: "Instagram",
-        url: "https://instagram.com",
+        url: "https://www.instagram.com/",
         description: "a photo and video sharing social platform",
         domain: "instagram.com"
     },
     twitter: {
         name: "Twitter",
-        url: "https://twitter.com",
+        url: "https://twitter.com/",
         description: "a real-time social media and news platform",
         domain: "twitter.com"
     },
     x: {
         name: "X",
-        url: "https://twitter.com",
+        url: "https://twitter.com/",
         description: "a real-time social media platform",
         domain: "twitter.com"
     },
     reddit: {
         name: "Reddit",
-        url: "https://reddit.com",
+        url: "https://www.reddit.com/",
         description: "a community discussion and forum platform",
         domain: "reddit.com",
         buildSearchUrl: (query) => `https://www.reddit.com/search/?q=${encodeURIComponent(query)}`
     },
     facebook: {
         name: "Facebook",
-        url: "https://facebook.com",
+        url: "https://www.facebook.com/",
         description: "a social networking platform",
         domain: "facebook.com"
     },
     linkedin: {
         name: "LinkedIn",
-        url: "https://linkedin.com",
+        url: "https://www.linkedin.com/",
         description: "a professional networking platform",
         domain: "linkedin.com"
     },
     github: {
         name: "GitHub",
-        url: "https://github.com",
+        url: "https://github.com/",
         description: "a platform for code hosting and collaboration",
         domain: "github.com"
     },
     pinterest: {
         name: "Pinterest",
-        url: "https://pinterest.com",
+        url: "https://www.pinterest.com/",
         description: "a visual discovery and inspiration platform",
         domain: "pinterest.com"
     },
     discord: {
         name: "Discord",
-        url: "https://discord.com",
+        url: "https://discord.com/",
         description: "a chat and community communication platform",
         domain: "discord.com"
     },
     twitch: {
         name: "Twitch",
-        url: "https://twitch.tv",
+        url: "https://www.twitch.tv/",
         description: "a live streaming platform for gaming and content",
         domain: "twitch.tv"
     },
     "apple music": {
         name: "Apple Music",
-        url: "https://music.apple.com",
+        url: "https://music.apple.com/",
         description: "a music streaming platform",
         domain: "music.apple.com"
     },
     "youtube music": {
         name: "YouTube Music",
-        url: "https://music.youtube.com",
+        url: "https://music.youtube.com/",
         description: "a music streaming service by YouTube",
         domain: "music.youtube.com"
     },
     gmail: {
         name: "Gmail",
-        url: "https://mail.google.com",
+        url: "https://mail.google.com/",
         description: "Google's email service",
         domain: "mail.google.com"
     },
     "google docs": {
         name: "Google Docs",
-        url: "https://docs.google.com",
+        url: "https://docs.google.com/",
         description: "an online document editing platform",
         domain: "docs.google.com"
     },
     "google drive": {
         name: "Google Drive",
-        url: "https://drive.google.com",
+        url: "https://drive.google.com/",
         description: "a cloud storage platform",
         domain: "drive.google.com"
     },
     "google maps": {
         name: "Google Maps",
-        url: "https://maps.google.com",
+        url: "https://maps.google.com/",
         description: "a navigation and maps service",
         domain: "maps.google.com"
     },
     ebay: {
         name: "eBay",
-        url: "https://ebay.com",
+        url: "https://www.ebay.com/",
         description: "an online marketplace for buying and selling",
         domain: "ebay.com"
     },
     etsy: {
         name: "Etsy",
-        url: "https://etsy.com",
+        url: "https://www.etsy.com/",
         description: "a marketplace for handmade and creative goods",
         domain: "etsy.com"
     },
     cnn: {
         name: "CNN",
-        url: "https://cnn.com",
+        url: "https://www.cnn.com/",
         description: "a news website",
         domain: "cnn.com"
     },
     bbc: {
         name: "BBC",
-        url: "https://bbc.com",
+        url: "https://www.bbc.com/",
         description: "an international news and media site",
         domain: "bbc.com"
     },
     nytimes: {
         name: "NYTimes",
-        url: "https://nytimes.com",
+        url: "https://www.nytimes.com/",
         description: "a major news publication",
         domain: "nytimes.com"
     },
     weather: {
         name: "Weather",
-        url: "https://weather.com",
+        url: "https://weather.com/",
         description: "a weather forecasting website",
         domain: "weather.com"
     },
     yahoo: {
         name: "Yahoo",
-        url: "https://yahoo.com",
+        url: "https://www.yahoo.com/",
         description: "a web portal and news site",
         domain: "yahoo.com"
     }
 };
+
+const unknownSiteCache = new Map();
 
 const LAYER3_TO_EMOTION = {
     hearts: "caring",
@@ -262,6 +373,11 @@ function formatSiteName(siteRequest = "") {
     return cleanSiteRequest(siteRequest).replace(/\s+/g, " ");
 }
 
+function formatDisplaySiteName(siteRequest = "") {
+    const siteName = formatSiteName(siteRequest);
+    return siteName.replace(/\b[a-z]/g, (character) => character.toUpperCase());
+}
+
 function getWebsiteMatch(siteRequest = "") {
     const cleanedSite = formatSiteName(siteRequest);
     if (!cleanedSite) return null;
@@ -274,18 +390,124 @@ function looksLikeDomain(value = "") {
     return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(value.trim());
 }
 
-function guessSiteDescription(siteName = "") {
-    const normalizedSite = normalizeLookupValue(siteName);
+function normalizeSmartSiteName(siteName = "") {
+    return cleanSiteRequest(siteName).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
-    if (!normalizedSite) return "a website or online platform";
-    if (/(music|radio|sound|playlist|podcast)/.test(normalizedSite)) return "a music or audio platform";
-    if (/(shop|store|market|buy|sale|deal)/.test(normalizedSite)) return "an online shopping website";
-    if (/(news|times|post|journal|daily)/.test(normalizedSite)) return "a news or media website";
-    if (/(chat|talk|forum|community|social)/.test(normalizedSite)) return "a community or communication website";
-    if (/(video|tube|stream|tv)/.test(normalizedSite)) return "a video or streaming website";
-    if (/(mail|docs|drive|calendar|notes)/.test(normalizedSite)) return "a productivity or web service";
+function sanitizeDescriptionSentence(text = "", siteName = "") {
+    const cleaned = String(text || "").replace(/\s+/g, " ").trim();
+    if (!cleaned) {
+        const displayName = formatSiteName(siteName) || "This website";
+        return `${displayName} appears to be an online website or service.`;
+    }
 
-    return "a website or online platform";
+    const singleSentence = cleaned.split(/(?<=[.!?])\s+/)[0].trim();
+    return /[.!?]$/.test(singleSentence) ? singleSentence : `${singleSentence}.`;
+}
+
+async function generateWebsiteDescription(siteName = "") {
+    const displayName = formatSiteName(siteName);
+    if (!displayName) {
+        return "It appears to be an online website or service.";
+    }
+
+    try {
+        const completion = await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "system",
+                    content: "You write one-sentence website descriptions. Be accurate, concise, and avoid speculation when uncertain."
+                },
+                {
+                    role: "user",
+                    content: `Give a one-sentence description of the website called '${displayName}'. Be accurate and concise.`
+                }
+            ]
+        });
+
+        return sanitizeDescriptionSentence(completion.choices[0]?.message?.content, displayName);
+    } catch (error) {
+        console.error("generateWebsiteDescription failed:", error);
+        return sanitizeDescriptionSentence("", displayName);
+    }
+}
+
+function buildSmartUrl(siteName = "") {
+    const normalizedSite = normalizeSmartSiteName(siteName);
+    if (!normalizedSite) return null;
+
+    return `https://${normalizedSite}.com/`;
+}
+
+async function canResolveUrl(url) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            redirect: "follow",
+            signal: controller.signal,
+            headers: {
+                "user-agent": "Mozilla/5.0 Agent Fluffy Bunny"
+            }
+        });
+
+        return response.status < 500 ? response.url || url : null;
+    } catch (error) {
+        return null;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+async function resolveSmartUrl(siteName = "") {
+    const directUrl = buildSmartUrl(siteName);
+    if (!directUrl) return null;
+
+    const normalizedSite = normalizeSmartSiteName(siteName);
+    const candidates = [
+        directUrl,
+        `https://www.${normalizedSite}.com/`
+    ];
+
+    for (const candidate of candidates) {
+        const resolvedUrl = await canResolveUrl(candidate);
+        if (resolvedUrl) {
+            return resolvedUrl;
+        }
+    }
+
+    return null;
+}
+
+async function getUnknownSiteDetails(siteName = "") {
+    const queryName = formatSiteName(siteName);
+    const displayName = formatDisplaySiteName(siteName);
+    if (!queryName || !displayName) return null;
+
+    const cacheKey = normalizeLookupValue(queryName);
+    if (unknownSiteCache.has(cacheKey)) {
+        return unknownSiteCache.get(cacheKey);
+    }
+
+    const [description, resolvedUrl] = await Promise.all([
+        generateWebsiteDescription(displayName),
+        resolveSmartUrl(displayName)
+    ]);
+
+    const details = {
+        siteName: displayName,
+        query: queryName.toLowerCase(),
+        description,
+        directUrl: buildSmartUrl(displayName),
+        resolvedUrl,
+        fallbackUrl: buildGoogleSearchUrl(queryName)
+    };
+
+    unknownSiteCache.set(cacheKey, details);
+    return details;
 }
 
 function buildGoogleSearchUrl(query) {
@@ -309,7 +531,503 @@ function buildFallbackSearchUrl(query, siteRequest, site = null) {
     return buildGoogleSearchUrl(fallbackQuery);
 }
 
-function buildOpenWebsiteResponse(siteRequest) {
+function detectWeatherIntent(message = "") {
+    const trimmedMessage = typeof message === "string" ? message.trim() : "";
+    if (!trimmedMessage) return null;
+
+    const normalizedMessage = normalizeLookupValue(trimmedMessage)
+        .replace(/\bwhat s\b/g, "whats")
+        .replace(/\bhow s\b/g, "hows");
+    const patterns = [
+        /^(?:what(?:s| is)\s+)?(?:the\s+)?weather(?:\s+(?:today|like))?\s+(?:in|for)\s+(.+)$/i,
+        /^(?:how(?:s| is)\s+the\s+weather)\s+(?:in|for)\s+(.+)$/i,
+        /^(?:weather|forecast)(?:\s+today)?\s+(?:in|for)\s+(.+)$/i,
+        /^(?:what(?:s| is)\s+)?(?:the\s+)?(?:temperature|forecast)(?:\s+today)?\s+(?:in|for)\s+(.+)$/i,
+        /^(?:temperature|forecast)(?:\s+today)?\s+(?:in|for)\s+(.+)$/i,
+        /^(?:how\s+hot\s+is\s+it)\s+(?:in|for)\s+(.+)$/i
+    ];
+
+    for (const pattern of patterns) {
+        const match = normalizedMessage.match(pattern);
+        if (match) {
+            const location = cleanQuery(match[1]);
+            return location || null;
+        }
+    }
+
+    return null;
+}
+
+const US_STATE_NAMES = {
+    al: "Alabama",
+    ak: "Alaska",
+    az: "Arizona",
+    ar: "Arkansas",
+    ca: "California",
+    co: "Colorado",
+    ct: "Connecticut",
+    de: "Delaware",
+    fl: "Florida",
+    ga: "Georgia",
+    hi: "Hawaii",
+    id: "Idaho",
+    il: "Illinois",
+    in: "Indiana",
+    ia: "Iowa",
+    ks: "Kansas",
+    ky: "Kentucky",
+    la: "Louisiana",
+    me: "Maine",
+    md: "Maryland",
+    ma: "Massachusetts",
+    mi: "Michigan",
+    mn: "Minnesota",
+    ms: "Mississippi",
+    mo: "Missouri",
+    mt: "Montana",
+    ne: "Nebraska",
+    nv: "Nevada",
+    nh: "New Hampshire",
+    nj: "New Jersey",
+    nm: "New Mexico",
+    ny: "New York",
+    nc: "North Carolina",
+    nd: "North Dakota",
+    oh: "Ohio",
+    ok: "Oklahoma",
+    or: "Oregon",
+    pa: "Pennsylvania",
+    ri: "Rhode Island",
+    sc: "South Carolina",
+    sd: "South Dakota",
+    tn: "Tennessee",
+    tx: "Texas",
+    ut: "Utah",
+    vt: "Vermont",
+    va: "Virginia",
+    wa: "Washington",
+    wv: "West Virginia",
+    wi: "Wisconsin",
+    wy: "Wyoming",
+    dc: "District of Columbia"
+};
+
+const UNIQUE_US_STATE_NAMES = [...new Set(Object.values(US_STATE_NAMES))].sort((left, right) => right.length - left.length);
+
+function cleanWeatherLocation(value = "") {
+    return cleanQuery(value)
+        .replace(/\b(?:right now|today|tonight|this morning|this afternoon|this evening|tomorrow)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function buildWeatherLocationCandidates(location = "") {
+    const cleanedLocation = cleanWeatherLocation(location);
+    if (!cleanedLocation) return [];
+
+    const seenCandidates = new Set();
+    const candidates = [];
+    const addCandidate = (query, options = {}) => {
+        const normalizedQuery = cleanQuery(query).replace(/\s+/g, " ").trim();
+        if (!normalizedQuery) return;
+
+        const key = `${normalizedQuery}::${options.preferredAdmin1 || ""}::${options.preferredCountryCode || ""}`;
+        if (seenCandidates.has(key)) return;
+
+        seenCandidates.add(key);
+        candidates.push({
+            query: normalizedQuery,
+            ...options
+        });
+    };
+
+    addCandidate(cleanedLocation);
+    const hasCountry = /\b(united states|usa|us)\b/i.test(cleanedLocation);
+    if (!hasCountry) {
+        addCandidate(`${cleanedLocation}, United States`, {
+            preferredCountryCode: "US"
+        });
+    }
+
+    const stateMatch = cleanedLocation.match(/^(.*?)(?:,\s*|\s+)([a-z]{2})$/i);
+    if (stateMatch) {
+        const city = stateMatch[1].trim();
+        const stateCode = stateMatch[2].toLowerCase();
+        const stateName = US_STATE_NAMES[stateCode];
+
+        if (city && stateName) {
+            addCandidate(city, {
+                preferredAdmin1: stateName,
+                preferredCountryCode: "US"
+            });
+            addCandidate(`${city}, United States`, {
+                preferredAdmin1: stateName,
+                preferredCountryCode: "US"
+            });
+        }
+    }
+
+    const normalizedLocation = normalizeLookupValue(cleanedLocation);
+    for (const stateName of UNIQUE_US_STATE_NAMES) {
+        const normalizedStateName = normalizeLookupValue(stateName);
+        if (!normalizedLocation.endsWith(` ${normalizedStateName}`)) {
+            continue;
+        }
+
+        const city = cleanedLocation.slice(0, cleanedLocation.length - stateName.length).replace(/[,\s]+$/g, "").trim();
+        if (!city) {
+            continue;
+        }
+
+        addCandidate(`${city}, ${stateName}`, {
+            preferredAdmin1: stateName,
+            preferredCountryCode: "US"
+        });
+        addCandidate(city, {
+            preferredAdmin1: stateName,
+            preferredCountryCode: "US"
+        });
+    }
+
+    return candidates;
+}
+
+function formatGeocodedLocation(result = {}) {
+    const nameParts = [result.name];
+    if (result.admin1) {
+        nameParts.push(result.admin1);
+    } else if (result.country_code) {
+        nameParts.push(result.country_code);
+    }
+
+    return {
+        name: nameParts.filter(Boolean).join(", "),
+        latitude: result.latitude,
+        longitude: result.longitude
+    };
+}
+
+async function getCoordinates(location) {
+    const candidates = buildWeatherLocationCandidates(location);
+
+    for (const candidate of candidates) {
+        const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(candidate.query)}&count=20&language=en&format=json`);
+        const data = await response.json();
+        const results = Array.isArray(data.results) ? data.results : [];
+
+        if (!results.length) {
+            continue;
+        }
+
+        const preferredAdmin1 = candidate.preferredAdmin1 ? normalizeLookupValue(candidate.preferredAdmin1) : null;
+        const preferredCountryCode = candidate.preferredCountryCode || null;
+        const preferredResult = results.find((result) => {
+            const matchesCountry = !preferredCountryCode || result.country_code === preferredCountryCode;
+            const matchesAdmin1 = !preferredAdmin1 || normalizeLookupValue(result.admin1) === preferredAdmin1;
+            return matchesCountry && matchesAdmin1;
+        }) || results.find((result) => !preferredCountryCode || result.country_code === preferredCountryCode) || results[0];
+
+        if (preferredResult) {
+            return formatGeocodedLocation(preferredResult);
+        }
+    }
+
+    return null;
+}
+
+async function getWeather(lat, lon) {
+    const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code&hourly=temperature_2m,precipitation_probability,wind_speed_10m,weather_code&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=2`
+    );
+
+    const data = await response.json();
+    return {
+        ...data,
+        current_weather: data.current
+            ? {
+                temperature: data.current.temperature_2m,
+                windspeed: data.current.wind_speed_10m,
+                weathercode: data.current.weather_code,
+                time: data.current.time
+            }
+            : data.current_weather,
+        hourly: data.hourly
+            ? {
+                ...data.hourly,
+                windspeed_10m: data.hourly.wind_speed_10m || data.hourly.windspeed_10m
+            }
+            : data.hourly
+    };
+}
+
+function isWeatherDetailsRequest(message = "") {
+    return /^(yes|yeah|yep|sure|ok|okay|show more|details|more detail|more details|tell me more)(\s+please)?$/i.test(
+        normalizeLookupValue(message)
+    );
+}
+
+function describeWeatherCode(weatherCode) {
+    const code = Number(weatherCode);
+
+    if (code === 0) return "clear";
+    if (code === 1) return "mostly clear";
+    if (code === 2) return "partly cloudy";
+    if (code === 3) return "overcast";
+    if (code === 45 || code === 48) return "foggy";
+    if ([51, 53, 55, 56, 57].includes(code)) return "drizzly";
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "rainy";
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "snowy";
+    if ([95, 96, 99].includes(code)) return "stormy";
+
+    return "mild";
+}
+
+function describeShortWeatherCode(weatherCode, precipitationProbability = null) {
+    const code = Number(weatherCode);
+
+    if (precipitationProbability !== null && precipitationProbability >= 55) {
+        return "rain likely";
+    }
+
+    if (code === 0 || code === 1) return "sunny";
+    if (code === 2) return "partly cloudy";
+    if (code === 3) return "cloudy";
+    if (code === 45 || code === 48) return "foggy";
+    if ([51, 53, 55, 56, 57].includes(code)) return "drizzly";
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "showery";
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "snowy";
+    if ([95, 96, 99].includes(code)) return "stormy";
+
+    return "steady";
+}
+
+function getHourlySnapshot(weatherData, itemCount = 3) {
+    const hourly = weatherData?.hourly;
+    if (!hourly?.time?.length) return [];
+
+    const currentTime = weatherData?.current_weather?.time || hourly.time[0];
+    const startIndex = Math.max(hourly.time.findIndex((time) => time >= currentTime), 0);
+    const snapshots = [];
+
+    for (let step = 0; snapshots.length < itemCount; step += 2) {
+        const index = startIndex + step;
+        if (index >= hourly.time.length) break;
+
+        snapshots.push({
+            time: hourly.time[index],
+            temperature: hourly.temperature_2m?.[index],
+            precipitationProbability: hourly.precipitation_probability?.[index],
+            windspeed: hourly.windspeed_10m?.[index],
+            weathercode: hourly.weather_code?.[index]
+        });
+    }
+
+    return snapshots;
+}
+
+function formatHourLabel(timestamp = "") {
+    const hourPortion = timestamp.split("T")[1]?.slice(0, 2);
+    const hour = Number(hourPortion);
+
+    if (Number.isNaN(hour)) {
+        return timestamp;
+    }
+
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const normalizedHour = hour % 12 || 12;
+    return `${normalizedHour} ${suffix}`;
+}
+
+function formatWeatherSummary(locationName, weatherData) {
+    const currentWeather = weatherData?.current_weather;
+    if (!currentWeather) {
+        return `I checked ${locationName}, but I couldn't pull together a clean weather snapshot just yet. Want to try again in a moment?`;
+    }
+
+    const temperature = Math.round(currentWeather.temperature);
+    const windspeed = Math.round(currentWeather.windspeed);
+    const condition = describeWeatherCode(currentWeather.weathercode);
+    const hourlySnapshots = getHourlySnapshot(weatherData, 4);
+    const maxRainChance = hourlySnapshots.reduce((highest, snapshot) => {
+        const rainChance = Number(snapshot.precipitationProbability);
+        return Number.isNaN(rainChance) ? highest : Math.max(highest, rainChance);
+    }, 0);
+
+    let overallLine = "It looks pretty steady overall today with easygoing conditions 🌤️";
+    if (maxRainChance >= 60) {
+        overallLine = "There is a decent chance of rain later on, so it may be smart to keep an umbrella nearby ☔";
+    } else if (windspeed >= 18) {
+        overallLine = "It is feeling a bit breezy today, so hold onto your hoodie if you head outside 🍃";
+    } else if (condition === "clear" || condition === "mostly clear") {
+        overallLine = "It looks pretty calm overall today with mild conditions 🌤️";
+    }
+
+    return `Right now in ${locationName}, it's ${temperature}°F and ${condition} with winds around ${windspeed} mph. ${overallLine} Want a more detailed breakdown?`;
+}
+
+function formatWeatherDetails(locationName, weatherData) {
+    const snapshots = getHourlySnapshot(weatherData, 3);
+    if (!snapshots.length) {
+        return `I don't have enough hourly detail for ${locationName} yet, but we can try checking again in a moment.`;
+    }
+
+    const detailLines = snapshots.map((snapshot) => {
+        const temperature = Number.isFinite(snapshot.temperature) ? `${Math.round(snapshot.temperature)}°F` : "temperature unavailable";
+        const condition = describeShortWeatherCode(snapshot.weathercode, snapshot.precipitationProbability);
+        const rainChance = Number.isFinite(snapshot.precipitationProbability)
+            ? `${Math.round(snapshot.precipitationProbability)}% chance of rain`
+            : "rain chance unavailable";
+
+        return `• ${formatHourLabel(snapshot.time)}: ${temperature}, ${condition}, ${rainChance}`;
+    });
+
+    return `Here's a closer look in ${locationName}:\n\n${detailLines.join("\n")}\n\nLooks like a pretty manageable day overall 🌇`;
+}
+
+function buildYouTubeSearch(query) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
+
+function enhanceMusicQuery(query, type) {
+    const q = query.toLowerCase();
+
+    if (type !== "general") return query;
+
+    if (q.includes("study") || q.includes("focus")) {
+        return "lofi study music playlist";
+    }
+
+    if (q.includes("chill") || q.includes("relax")) {
+        return "chill lofi music playlist";
+    }
+
+    if (q.includes("sleep")) {
+        return "ambient sleep music";
+    }
+
+    if (q.includes("workout") || q.includes("gym")) {
+        return "high energy workout music playlist";
+    }
+
+    if (q.includes("sad") || q.includes("cry")) {
+        return "sad emotional songs playlist";
+    }
+
+    if (q.includes("happy")) {
+        return "happy upbeat music playlist";
+    }
+
+    if (q.includes("party")) {
+        return "party hits playlist";
+    }
+
+    if (q.includes("hype")) {
+        return "hype music playlist";
+    }
+
+    if (q.includes("jazz")) {
+        return "smooth jazz music";
+    }
+
+    if (q.includes("rap") || q.includes("hip hop")) {
+        return "rap music playlist";
+    }
+
+    return query;
+}
+
+function isGeneralMusicRequest(query = "") {
+    return /\b(music|song|songs|playlist|playlists|mix|beats|lofi|jazz|rap|hip hop|study|focus|chill|relax|sleep|workout|gym|sad|cry|happy|party|hype|ambient)\b/i.test(query);
+}
+
+function buildGeneralMusicReply(query = "") {
+    const normalizedQuery = query.toLowerCase();
+
+    if (normalizedQuery.includes("study") || normalizedQuery.includes("focus")) {
+        return "Got it - here's some study music to help you lock in 📚🎧";
+    }
+
+    if (normalizedQuery.includes("workout") || normalizedQuery.includes("gym") || normalizedQuery.includes("hype")) {
+        return "Let's get some energy going - playing workout music 💪🔥";
+    }
+
+    if (normalizedQuery.includes("sad") || normalizedQuery.includes("cry")) {
+        return "I've got you - here's something to match the mood 💙🎶";
+    }
+
+    return "Alright, playing some music for you 🎵";
+}
+
+function detectMusicAction(message = "") {
+    const trimmedMessage = typeof message === "string" ? message.trim() : "";
+    if (!trimmedMessage) return null;
+
+    const songMatch = trimmedMessage.match(/^(?:please\s+)?play(?:\s+the\s+song)?\s+(.+?)\s+by\s+(.+)$/i);
+    if (songMatch) {
+        const song = cleanQuery(songMatch[1]);
+        const artist = cleanQuery(songMatch[2]);
+        if (!song || !artist) return null;
+
+        return {
+            reply: `Ooo good choice - playing '${song}' by ${artist} 🎶`,
+            emotion: "excited",
+            layer3: "sparkle",
+            action: "open_url",
+            data: {
+                url: buildYouTubeSearch(`${song} ${artist}`),
+                siteName: "YouTube",
+                description: "a video and music streaming platform"
+            },
+            needsConfirmation: false
+        };
+    }
+
+    const artistMatch = trimmedMessage.match(/^(?:please\s+)?play\s+the\s+artist\s+(.+)$/i);
+    if (artistMatch) {
+        const artist = cleanQuery(artistMatch[1]);
+        if (!artist) return null;
+
+        return {
+            reply: `Alright, playing ${artist} for you 🎵`,
+            emotion: "excited",
+            layer3: "sparkle",
+            action: "open_url",
+            data: {
+                url: buildYouTubeSearch(artist),
+                siteName: "YouTube",
+                description: "a video and music streaming platform"
+            },
+            needsConfirmation: false
+        };
+    }
+
+    const generalPlayMatch = trimmedMessage.match(/^(?:please\s+)?play\s+(.+)$/i);
+    if (!generalPlayMatch) return null;
+
+    const originalQuery = cleanQuery(generalPlayMatch[1]);
+    if (!originalQuery) return null;
+
+    const type = isGeneralMusicRequest(originalQuery) ? "general" : "artist";
+    const query = enhanceMusicQuery(originalQuery, type);
+    const reply = type === "artist"
+        ? `Alright, playing ${originalQuery} for you 🎵`
+        : buildGeneralMusicReply(originalQuery);
+
+    return {
+        reply,
+        emotion: "excited",
+        layer3: "sparkle",
+        action: "open_url",
+        data: {
+            url: buildYouTubeSearch(query),
+            siteName: "YouTube",
+            description: "a video and music streaming platform"
+        },
+        needsConfirmation: false
+    };
+}
+
+async function buildOpenWebsiteResponse(siteRequest) {
     const site = getWebsiteMatch(siteRequest);
 
     if (site) {
@@ -330,23 +1048,23 @@ function buildOpenWebsiteResponse(siteRequest) {
     const siteName = formatSiteName(siteRequest);
     if (!siteName) return null;
 
-    const description = guessSiteDescription(siteName);
+    const siteDetails = await getUnknownSiteDetails(siteName);
 
     return {
-        reply: `I think I found '${siteName}'. Before I open it, does this match what you're looking for: ${description}?`,
+        reply: `I think I found '${siteDetails.siteName}'. Before I open it, does this match what you're looking for: ${siteDetails.description}`,
         emotion: "uncertain",
         layer3: "confused",
         action: "open_url",
         data: {
-            url: buildGoogleSearchUrl(siteName),
-            siteName,
-            description
+            siteName: siteDetails.siteName,
+            query: siteDetails.query,
+            description: siteDetails.description
         },
         needsConfirmation: true
     };
 }
 
-function buildSearchWebsiteResponse(queryRequest, siteRequest) {
+async function buildSearchWebsiteResponse(queryRequest, siteRequest) {
     const query = cleanQuery(queryRequest);
     if (!query) return null;
 
@@ -385,10 +1103,12 @@ function buildSearchWebsiteResponse(queryRequest, siteRequest) {
     }
 
     const siteName = formatSiteName(siteRequest);
-    const description = guessSiteDescription(siteName);
+    const siteDetails = siteName ? await getUnknownSiteDetails(siteName) : null;
+    const description = siteDetails?.description || "a website or online platform";
+    const displaySiteName = siteDetails?.siteName || siteName;
 
     return {
-        reply: `Alright, opening ${googleSite.name} - ${googleSite.description}. I could not find a direct search for ${siteName} - ${description} - so I am searching for "${query}" there instead.`,
+        reply: `Alright, opening ${googleSite.name} - ${googleSite.description}. I could not find a direct search for ${displaySiteName} - ${description} - so I am searching for "${query}" there instead.`,
         emotion: "helpful",
         layer3: "shine",
         action: "open_url",
@@ -401,7 +1121,7 @@ function buildSearchWebsiteResponse(queryRequest, siteRequest) {
     };
 }
 
-function detectWebsiteAction(message = "") {
+async function detectWebsiteAction(message = "") {
     const trimmedMessage = typeof message === "string" ? message.trim() : "";
     if (!trimmedMessage) return null;
 
@@ -426,6 +1146,19 @@ function inferEmotion(layer3, modelEmotion = "") {
     return LAYER3_TO_EMOTION[layer3] || "friendly";
 }
 
+function getRandomHopecoreQuote() {
+    const index = Math.floor(Math.random() * HOPECORE_QUOTES.length);
+    return HOPECORE_QUOTES[index];
+}
+
+function detectHopecoreIntent(message = "") {
+    const rawMessage = String(message || "").toLowerCase().trim();
+    if (!rawMessage) return false;
+
+    const normalizedMessage = normalizeLookupValue(message);
+    return /\bhopecore\b/i.test(rawMessage) || /\bhope\s+core\b/i.test(normalizedMessage);
+}
+
 function rememberExchange(userMessage, assistantResponse) {
     conversationHistory.push({
         role: "user",
@@ -442,6 +1175,30 @@ function rememberExchange(userMessage, assistantResponse) {
     });
 }
 
+async function generateStructuredNotes(content = "") {
+    const completion = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            {
+                role: "system",
+                content: `
+                    Turn spoken content into clean, structured notes.
+                    Do not transcribe word-for-word.
+                    Use short headings and flat bullet points.
+                    Pull out key ideas, action items, names, dates, and follow-ups when they are present.
+                    Return plain text only.
+                `
+            },
+            {
+                role: "user",
+                content
+            }
+        ]
+    });
+
+    return completion.choices?.[0]?.message?.content?.trim() || "Summary\n- I organized the notes as best as I could, but there was not much detail to work with.";
+}
+
 async function synthesizeAudio(text) {
     const speech = await client.audio.speech.create({
         model: "gpt-4o-mini-tts",
@@ -455,8 +1212,14 @@ async function synthesizeAudio(text) {
 }
 
 async function finalizeResponse(payload) {
-    const audio = payload.reply ? await synthesizeAudio(payload.reply) : null;
-    return audio ? { ...payload, audio } : payload;
+    const { skipAudio, ...responsePayload } = payload;
+
+    if (skipAudio || !responsePayload.reply) {
+        return responsePayload;
+    }
+
+    const audio = await synthesizeAudio(responsePayload.reply);
+    return audio ? { ...responsePayload, audio } : responsePayload;
 }
 
 function inferLayer3(message, reply = "") {
@@ -499,13 +1262,164 @@ app.get("/", (req, res) => {
 });
 
 
+app.get("/open-site", async (req, res) => {
+    try {
+        const siteRequest = typeof req.query.query === "string" ? req.query.query : req.query.siteName;
+        const siteName = formatSiteName(siteRequest);
+
+        if (!siteName) {
+            res.redirect(buildGoogleSearchUrl("website"));
+            return;
+        }
+
+        const site = getWebsiteMatch(siteName);
+        if (site) {
+            res.redirect(site.url);
+            return;
+        }
+
+        const siteDetails = await getUnknownSiteDetails(siteName);
+        const targetUrl = siteDetails?.resolvedUrl || siteDetails?.fallbackUrl || buildGoogleSearchUrl(siteName);
+        res.redirect(targetUrl);
+    } catch (error) {
+        console.error("open-site redirect failed:", error);
+        res.redirect(buildGoogleSearchUrl(typeof req.query.query === "string" ? req.query.query : "website"));
+    }
+});
+
 /* Chat endpoint */
 app.post("/chat", async (req, res) => {
 
-    const { message } = req.body;
+    const { message, followUpContext, type, content } = req.body;
 
     try {
-        const websiteAction = detectWebsiteAction(message);
+        if (type === "notes") {
+            const notesContent = typeof content === "string" ? content.trim() : "";
+
+            if (!notesContent) {
+                const emptyNotesResponse = {
+                    reply: "I didn't catch any note content to organize yet. Try again whenever you're ready.",
+                    emotion: "confused",
+                    layer3: "confused"
+                };
+
+                rememberExchange("Please organize my notes.", emptyNotesResponse);
+                res.json(await finalizeResponse(emptyNotesResponse));
+                return;
+            }
+
+            try {
+                const notesResponse = {
+                    reply: await generateStructuredNotes(notesContent),
+                    emotion: "focused",
+                    layer3: "pencil",
+                    skipAudio: true
+                };
+
+                rememberExchange("Please organize my verbal notes.", notesResponse);
+                res.json(await finalizeResponse(notesResponse));
+                return;
+            } catch (error) {
+                console.error("note organization failed:", error);
+
+                const notesErrorResponse = {
+                    reply: "I had trouble organizing those notes just now. Please try again in a moment.",
+                    emotion: "concerned",
+                    layer3: "sweat"
+                };
+
+                rememberExchange("Please organize my verbal notes.", notesErrorResponse);
+                res.json(await finalizeResponse(notesErrorResponse));
+                return;
+            }
+        }
+
+        if (detectHopecoreIntent(message)) {
+            const quote = getRandomHopecoreQuote();
+            const hopecoreResponse = {
+                reply: `\u{1F331} Hopecore Drop:\n\n"${quote.text}"\n\n\u2014 ${quote.author}`,
+                emotion: "hopeful",
+                layer3: "sparkle",
+                skipAudio: true
+            };
+
+            rememberExchange(message, hopecoreResponse);
+            res.json(await finalizeResponse(hopecoreResponse));
+            return;
+        }
+
+        if (followUpContext?.followUpType === "weather_details" && isWeatherDetailsRequest(message)) {
+            const cachedWeather = followUpContext.weatherCache;
+            const weatherData = cachedWeather?.raw || await getWeather(cachedWeather?.lat, cachedWeather?.lon);
+            const weatherDetailResponse = {
+                reply: formatWeatherDetails(cachedWeather?.location || "that area", weatherData),
+                emotion: "friendly",
+                layer3: "shine"
+            };
+
+            rememberExchange(message, weatherDetailResponse);
+            res.json(await finalizeResponse(weatherDetailResponse));
+            return;
+        }
+
+        const weatherIntent = detectWeatherIntent(message);
+        if (weatherIntent) {
+            try {
+                const coords = await getCoordinates(weatherIntent);
+
+                if (!coords) {
+                    const locationNotFoundResponse = {
+                        reply: "I couldn't find that location - can you try it one more time for me?",
+                        emotion: "confused",
+                        layer3: "confused"
+                    };
+
+                    rememberExchange(message, locationNotFoundResponse);
+                    res.json(await finalizeResponse(locationNotFoundResponse));
+                    return;
+                }
+
+                const weatherData = await getWeather(coords.latitude, coords.longitude);
+                const weatherSummaryResponse = {
+                    reply: formatWeatherSummary(coords.name, weatherData),
+                    emotion: "friendly",
+                    layer3: "shine",
+                    needsFollowUp: true,
+                    followUpType: "weather_details",
+                    weatherCache: {
+                        location: coords.name,
+                        lat: coords.latitude,
+                        lon: coords.longitude,
+                        raw: weatherData
+                    }
+                };
+
+                rememberExchange(message, weatherSummaryResponse);
+                res.json(await finalizeResponse(weatherSummaryResponse));
+                return;
+            } catch (error) {
+                console.error("weather lookup failed:", error);
+
+                const weatherErrorResponse = {
+                    reply: "I had trouble checking the weather just now. Can you give me one more try in a moment?",
+                    emotion: "concerned",
+                    layer3: "sweat"
+                };
+
+                rememberExchange(message, weatherErrorResponse);
+                res.json(await finalizeResponse(weatherErrorResponse));
+                return;
+            }
+        }
+
+        const musicAction = detectMusicAction(message);
+        if (musicAction) {
+            rememberExchange(message, musicAction);
+            res.json(await finalizeResponse(musicAction));
+            return;
+        }
+
+        const websiteAction = await detectWebsiteAction(message);
         if (websiteAction) {
             rememberExchange(message, websiteAction);
             res.json(await finalizeResponse(websiteAction));
