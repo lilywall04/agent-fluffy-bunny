@@ -1,6 +1,7 @@
 const asset = (file) => new URL(`./assets/${file}`, import.meta.url).href;
 
 export const LOGO_SRC = asset("AFBLogo.PNG");
+export const BUTTON_CLICK_SRC = asset("buttonclick1.wav");
 export const DEFAULT_CHARACTER_SRC = asset("Basicbunny.png");
 
 export const CHARACTER_CHOICES = [
@@ -59,7 +60,9 @@ export const LAYER3_CHOICES = {
   tulip: asset("tulip.png"),
   purpstar: asset("purpstar.png"),
   moon: asset("moon.png"),
-  beer: asset("beer.png")
+  beer: asset("beer.png"),
+  ramen: asset("ramen.png"),
+  soda: asset("soda.png")
 };
 
 export const WAKE_PHRASE = "come in agent fluffy bunny";

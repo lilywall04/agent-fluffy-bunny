@@ -1204,7 +1204,7 @@ async function synthesizeAudio(text) {
         model: "gpt-4o-mini-tts",
         voice: "shimmer",
         input: text,
-        speed: 1.3
+        speed: 1.5
     });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());
@@ -1228,6 +1228,8 @@ function inferLayer3(message, reply = "") {
     const rules = [
         { layer3: "birthday", keywords: ["birthday", "celebration"] },
         { layer3: "beer", keywords: ["bar", "beer", "wine", "drunk"] },
+        { layer3: "ramen", keywords: ["ramen", "salty", "noodles"] },
+        { layer3: "soda", keywords: ["soda", "pop", "coke"] },
         { layer3: "moon", keywords: ["tired", "night", "sky", "bedtime"] },
         { layer3: "tulip", keywords: ["spring", "outdoors"] },
         { layer3: "basketball", keywords: ["basketball"] },
@@ -1452,7 +1454,7 @@ app.post("/chat", async (req, res) => {
                             - 'layer3' (the reaction overlay)
 
                             The 'layer3' MUST be one of these exact strings:
-                            hearts, carrot, laugh, flowers, sweat, shine, soccer, basketball, pencil, art, watermelon, sparkle, birthday, confused, exclaim, tulip, purpstar, moon, beer.
+                            hearts, carrot, laugh, flowers, sweat, shine, soccer, basketball, pencil, art, watermelon, sparkle, birthday, confused, exclaim, tulip, purpstar, moon, beer, ramen, soda.
 
                             Use this guide when choosing 'layer3':
                             - hearts: love, happy, caring, thoughtful
@@ -1474,6 +1476,8 @@ app.post("/chat", async (req, res) => {
                             - purpstar: basic response
                             - moon: tired, night, sky, bedtime
                             - beer: bar, beer, wine, drunk
+                            - ramen: ramen, salty, noodles
+                            - soda: soda, pop, coke
 
                             Use 'purpstar' for a normal basic response when no more specific overlay fits.
                             `

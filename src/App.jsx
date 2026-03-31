@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   BUNNY_PREFIX,
+  BUTTON_CLICK_SRC,
   CHAT_URL,
   CHARACTER_CHOICES,
   COSTUME_CHOICES,
@@ -289,7 +290,92 @@ async function copyTextToClipboard(text) {
   }
 }
 
-function HomeScreen({ onStart, onQuickSelect }) {
+function CharacterOptionButton({ character, onSelect, buttonRef = null }) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      className="char-btn"
+      onClick={onSelect}
+    >
+      <img src={character.src} alt={character.label} />
+      <span>{character.label}</span>
+    </button>
+  );
+}
+
+function HomeCarouselButton({ character, buttonRef = null, onSelect }) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      className="home-bunny-card"
+      aria-label={`Choose ${character.label}`}
+      onClick={onSelect}
+    >
+      <img className="home-bunny-image" src={character.src} alt={character.label} />
+    </button>
+  );
+}
+
+function CostumeOptionButton({ costume, selectedCharacterSrc, isSelected, onSelect }) {
+  return (
+    <button
+      type="button"
+      className={`costume-btn${isSelected ? " is-selected" : ""}`}
+      onClick={onSelect}
+    >
+      <div className="costume-preview">
+        <img src={selectedCharacterSrc} alt="Bunny" className="preview-base" />
+        {costume.src ? (
+          <img src={costume.src} alt={costume.label} className="preview-overlay" />
+        ) : null}
+      </div>
+      <span>{costume.label}</span>
+    </button>
+  );
+}
+
+function MessageBubble({ message }) {
+  return (
+    <div
+      className={`msg ${message.who === "user" ? "msg-user" : "msg-bunny"}`}
+      style={message.pending ? { opacity: 0.7 } : undefined}
+    >
+      {message.text}
+    </div>
+  );
+}
+
+function BunnyDisplay({ selectedCharacterSrc, selectedCostumeSrc, layer3Src, isBunnySpeaking }) {
+  const speakingClassName = isBunnySpeaking ? " bunny-speaking" : "";
+
+  return (
+    <div className="bunny-area">
+      <img
+        src={selectedCharacterSrc}
+        alt="Agent Fluffy Bunny"
+        className={`bunny-img${speakingClassName}`}
+      />
+      {selectedCostumeSrc ? (
+        <img
+          src={selectedCostumeSrc}
+          alt="Costume"
+          className={`costume-img${speakingClassName}`}
+        />
+      ) : null}
+      {layer3Src ? (
+        <img
+          src={layer3Src}
+          alt="Reaction overlay"
+          className={`layer3-img${speakingClassName}`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
 
@@ -388,22 +474,26 @@ function HomeScreen({ onStart, onQuickSelect }) {
           aria-label="Character bunny carousel"
         >
           {CHARACTER_CHOICES.map((character, index) => (
-            <button
+            <HomeCarouselButton
               key={character.label}
-              ref={(node) => {
+              character={character}
+              buttonRef={(node) => {
                 cardRefs.current[index] = node;
               }}
-              type="button"
-              className="home-bunny-card"
-              aria-label={`Choose ${character.label}`}
-              onClick={() => onQuickSelect(character.src)}
-            >
-              <img className="home-bunny-image" src={character.src} alt={character.label} />
-            </button>
+              onSelect={(event) => {
+                onButtonClickSound(event, () => onQuickSelect(character.src));
+              }}
+            />
           ))}
         </div>
-        <button className="home-cta" type="button" onClick={onStart}>
-          Go To Character Selection
+        <button
+          className="home-cta"
+          type="button"
+          onClick={(event) => {
+            onButtonClickSound(event, onStart);
+          }}
+        >
+          Start
         </button>
       </div>
     </section>
@@ -416,26 +506,33 @@ function CharacterPickerModal({
   selectedCharacterSrc,
   selectedCostumeSrc,
   onPickCharacter,
-  onPickCostume
+  onPickCostume,
+  onBack,
+  onButtonClickSound
 }) {
   if (!isOpen) return null;
 
   return (
     <div className="costume-modal">
+      <button
+        className="utility-btn picker-overlay-back"
+        type="button"
+        onClick={onBack}
+      >
+        Back
+      </button>
       {step === "character" ? (
         <div className="costume-modal-content max-w-2xl">
           <h2>Select a Character!</h2>
           <div className="character-grid">
             {CHARACTER_CHOICES.map((character) => (
-              <button
+              <CharacterOptionButton
                 key={character.label}
-                type="button"
-                className="char-btn"
-                onClick={() => onPickCharacter(character.src)}
-              >
-                <img src={character.src} alt={character.label} />
-                <span>{character.label}</span>
-              </button>
+                character={character}
+                onSelect={(event) => {
+                  onButtonClickSound(event, () => onPickCharacter(character.src));
+                }}
+              />
             ))}
           </div>
         </div>
@@ -444,20 +541,15 @@ function CharacterPickerModal({
           <h2>Select a Costume!</h2>
           <div className="costume-options costume-options-modal">
             {COSTUME_CHOICES.map((costume) => (
-              <button
+              <CostumeOptionButton
                 key={costume.label}
-                type="button"
-                className={`costume-btn${(costume.src || "") === (selectedCostumeSrc || "") ? " is-selected" : ""}`}
-                onClick={() => onPickCostume(costume.src)}
-              >
-                <div className="costume-preview">
-                  <img src={selectedCharacterSrc} alt="Bunny" className="preview-base" />
-                  {costume.src ? (
-                    <img src={costume.src} alt={costume.label} className="preview-overlay" />
-                  ) : null}
-                </div>
-                <span>{costume.label}</span>
-              </button>
+                costume={costume}
+                selectedCharacterSrc={selectedCharacterSrc}
+                isSelected={(costume.src || "") === (selectedCostumeSrc || "")}
+                onSelect={(event) => {
+                  onButtonClickSound(event, () => onPickCostume(costume.src));
+                }}
+              />
             ))}
           </div>
         </div>
@@ -489,21 +581,17 @@ function ChatScreen({
 
   return (
     <div className="overlay" id="appOverlay">
-      <button className="utility-btn utility-btn-page" type="button" onClick={onReturnHome}>
+      <button
+        className="utility-btn utility-btn-page"
+        type="button"
+        onClick={onReturnHome}
+      >
         Return Home
       </button>
 
       <div className={`chat-ui${isBunnySpeaking ? " chat-hidden" : ""}`} id="chatUI">
         <div ref={chatLogRef} className="chat-log">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`msg ${message.who === "user" ? "msg-user" : "msg-bunny"}`}
-              style={message.pending ? { opacity: 0.7 } : undefined}
-            >
-              {message.text}
-            </div>
-          ))}
+          {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
           {pendingFollowUp ? (
             <div className="msg msg-bunny">
               {`${BUNNY_PREFIX}I’m ready with more weather detail if you want it. Reply with yes or no.`}
@@ -512,10 +600,20 @@ function ChatScreen({
         </div>
 
         <div className="input-bar">
-          <button className="icon-btn" type="button" title="Change Character" onClick={onRepickCharacter}>
+          <button
+            className="icon-btn"
+            type="button"
+            title="Change Character"
+            onClick={onRepickCharacter}
+          >
             🐰
           </button>
-          <button className="icon-btn" type="button" title="Change Costume" onClick={onRepickCostume}>
+          <button
+            className="icon-btn"
+            type="button"
+            title="Change Costume"
+            onClick={onRepickCostume}
+          >
             👕
           </button>
           <input
@@ -527,33 +625,21 @@ function ChatScreen({
             type="text"
             placeholder="Come in Agent Fluffy Bunny..."
           />
-          <button type="button" onClick={onSend}>
+          <button
+            type="button"
+            onClick={onSend}
+          >
             Over
           </button>
         </div>
       </div>
 
-      <div className="bunny-area">
-        <img
-          src={selectedCharacterSrc}
-          alt="Agent Fluffy Bunny"
-          className={`bunny-img${isBunnySpeaking ? " bunny-speaking" : ""}`}
-        />
-        {selectedCostumeSrc ? (
-          <img
-            src={selectedCostumeSrc}
-            alt="Costume"
-            className={`costume-img${isBunnySpeaking ? " bunny-speaking" : ""}`}
-          />
-        ) : null}
-        {layer3Src ? (
-          <img
-            src={layer3Src}
-            alt="Reaction overlay"
-            className={`layer3-img${isBunnySpeaking ? " bunny-speaking" : ""}`}
-          />
-        ) : null}
-      </div>
+      <BunnyDisplay
+        selectedCharacterSrc={selectedCharacterSrc}
+        selectedCostumeSrc={selectedCostumeSrc}
+        layer3Src={layer3Src}
+        isBunnySpeaking={isBunnySpeaking}
+      />
     </div>
   );
 }
@@ -564,6 +650,7 @@ export default function App() {
   const [selectedCharacterSrc, setSelectedCharacterSrc] = useState(DEFAULT_CHARACTER_SRC);
   const [selectedCostumeSrc, setSelectedCostumeSrc] = useState(null);
   const [layer3Src, setLayer3Src] = useState(null);
+  const [pickerOrigin, setPickerOrigin] = useState("home");
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [pendingFollowUp, setPendingFollowUp] = useState(null);
   const [inputValue, setInputValue] = useState("");
@@ -571,6 +658,7 @@ export default function App() {
   const [isBunnySpeaking, setIsBunnySpeaking] = useState(false);
 
   const matrixCanvasRef = useRef(null);
+  const lastButtonClickTimeRef = useRef(0);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
   const shouldListenRef = useRef(true);
@@ -639,6 +727,12 @@ export default function App() {
     const message = { id: createId(), text, who, pending: options.pending || false };
     setMessages((current) => [...current, message]);
     return message.id;
+  };
+
+  const updateMessageById = (messageId, updater) => {
+    setMessages((current) =>
+      current.map((message) => (message.id === messageId ? updater(message) : message))
+    );
   };
 
   const stopCurrentAudio = () => {
@@ -758,13 +852,11 @@ export default function App() {
 
       const data = await response.json();
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === placeholderId
-            ? { ...message, text: `${BUNNY_PREFIX}${data.reply}`, pending: false }
-            : message
-        )
-      );
+      updateMessageById(placeholderId, (message) => ({
+        ...message,
+        text: `${BUNNY_PREFIX}${data.reply}`,
+        pending: false
+      }));
 
       const copied = await copyTextToClipboard(data.reply);
       const docsWindow = window.open("https://docs.google.com/document/create", "_blank");
@@ -800,17 +892,11 @@ export default function App() {
     } catch (error) {
       console.error(error);
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === placeholderId
-            ? {
-                ...message,
-                text: `${BUNNY_PREFIX}I had trouble organizing those notes just now. Please try again in a moment.`,
-                pending: false
-              }
-            : message
-        )
-      );
+      updateMessageById(placeholderId, (message) => ({
+        ...message,
+        text: `${BUNNY_PREFIX}I had trouble organizing those notes just now. Please try again in a moment.`,
+        pending: false
+      }));
 
       setLayer3Src(LAYER3_CHOICES.sweat);
     }
@@ -870,13 +956,11 @@ export default function App() {
 
       const data = await response.json();
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === placeholderId
-            ? { ...message, text: `${BUNNY_PREFIX}${data.reply}`, pending: false }
-            : message
-        )
-      );
+      updateMessageById(placeholderId, (message) => ({
+        ...message,
+        text: `${BUNNY_PREFIX}${data.reply}`,
+        pending: false
+      }));
 
       if (data.needsConfirmation && data.action && data.data) {
         closePrimedActionWindow(primedWindow);
@@ -910,17 +994,11 @@ export default function App() {
     } catch (error) {
       console.error(error);
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === placeholderId
-            ? {
-                ...message,
-                text: `${BUNNY_PREFIX}Something went wrong talking to my brain 😵`,
-                pending: false
-              }
-            : message
-        )
-      );
+      updateMessageById(placeholderId, (message) => ({
+        ...message,
+        text: `${BUNNY_PREFIX}Something went wrong talking to my brain 😵`,
+        pending: false
+      }));
 
       closePrimedActionWindow(primedWindow);
       setPendingFollowUp(null);
@@ -1179,12 +1257,45 @@ export default function App() {
 
   useEffect(() => () => stopCurrentAudio(), []);
 
+  const playButtonClick = (event) => {
+    if (!event || event.type !== "click" || !event.isTrusted) return;
+    if (event.timeStamp - lastButtonClickTimeRef.current < 150) return;
+
+    lastButtonClickTimeRef.current = event.timeStamp;
+
+    const audio = new Audio(BUTTON_CLICK_SRC);
+    audio.preload = "auto";
+    audio.loop = false;
+    audio.currentTime = 0;
+    audio.play().catch((error) => {
+      console.log("button click audio failed:", error);
+    });
+  };
+
+  useEffect(() => {
+    if (!isBunnySpeaking) return undefined;
+
+    const handlePointerDown = () => {
+      if (!currentAudioRef.current) return;
+      stopBunnySpeech();
+      restartRecognitionSoon(0);
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [isBunnySpeaking]);
+
   const openCharacterPicker = () => {
+    setPickerOrigin(view === "chat" ? "chat" : "home");
     setView("picker");
     setPickerStep("character");
   };
 
   const openCostumePicker = () => {
+    setPickerOrigin(view === "chat" ? "chat" : "home");
     setView("picker");
     setPickerStep("costume");
   };
@@ -1201,8 +1312,28 @@ export default function App() {
 
   const quickSelectCharacter = (src) => {
     setSelectedCharacterSrc(src);
+    setPickerOrigin("home");
     setView("picker");
     setPickerStep("costume");
+  };
+
+  const handlePickerBack = () => {
+    if (pickerOrigin === "chat") {
+      setView("chat");
+      return;
+    }
+
+    if (pickerStep === "costume") {
+      setPickerStep("character");
+      return;
+    }
+
+    returnHome();
+  };
+
+  const runButtonAction = (event, action) => {
+    playButtonClick(event);
+    action();
   };
 
   const returnHome = () => {
@@ -1220,7 +1351,11 @@ export default function App() {
       <canvas ref={matrixCanvasRef} id="matrixCanvas" />
 
       {view === "home" ? (
-        <HomeScreen onStart={openCharacterPicker} onQuickSelect={quickSelectCharacter} />
+        <HomeScreen
+          onStart={openCharacterPicker}
+          onQuickSelect={quickSelectCharacter}
+          onButtonClickSound={runButtonAction}
+        />
       ) : null}
 
       <CharacterPickerModal
@@ -1230,6 +1365,8 @@ export default function App() {
         selectedCostumeSrc={selectedCostumeSrc}
         onPickCharacter={handlePickCharacter}
         onPickCostume={handlePickCostume}
+        onBack={handlePickerBack}
+        onButtonClickSound={runButtonAction}
       />
 
       {view === "chat" ? (
