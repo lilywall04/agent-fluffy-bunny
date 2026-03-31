@@ -1188,6 +1188,22 @@ export default function App() {
 
   useEffect(() => () => stopCurrentAudio(), []);
 
+  useEffect(() => {
+    if (!isBunnySpeaking) return undefined;
+
+    const handlePointerDown = () => {
+      if (!currentAudioRef.current) return;
+      stopBunnySpeech();
+      restartRecognitionSoon(0);
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [isBunnySpeaking]);
+
   const openCharacterPicker = () => {
     setPickerOrigin(view === "chat" ? "chat" : "home");
     setView("picker");
