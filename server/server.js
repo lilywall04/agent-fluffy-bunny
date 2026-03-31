@@ -1204,7 +1204,7 @@ async function synthesizeAudio(text) {
         model: "gpt-4o-mini-tts",
         voice: "shimmer",
         input: text,
-        speed: 1.3
+        speed: 1.5
     });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());
