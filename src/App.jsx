@@ -13,7 +13,58 @@ import {
   WAKE_PHRASE
 } from "./data";
 
+const START_NOTES_PHRASE = "start taking notes for me";
+const STOP_NOTES_PHRASE = "stop taking notes for me";
+const START_NOTES_PATTERNS = [
+  /\bstart\s+taking\s+notes?\s+for\s+me\b/,
+  /\bbegin\s+taking\s+notes?\s+for\s+me\b/,
+  /\bstart\s+taking\s+notes?\b/,
+  /\bbegin\s+taking\s+notes?\b/
+];
+const STOP_NOTES_PATTERNS = [
+  /\bstop\s+taking\s+notes?\s+for\s+me\b/,
+  /\bfinish\s+taking\s+notes?\s+for\s+me\b/,
+  /\bstop\s+taking\s+notes?\b/,
+  /\bfinish\s+taking\s+notes?\b/
+];
+
 let pendingAction = null;
+let isTakingNotes = false;
+let notesBuffer = [];
+
+const KNOWN_WEBSITE_KEYS = new Set([
+  "youtube",
+  "tiktok",
+  "substack",
+  "google",
+  "spotify",
+  "netflix",
+  "hulu",
+  "amazon",
+  "instagram",
+  "twitter",
+  "x",
+  "reddit",
+  "facebook",
+  "linkedin",
+  "github",
+  "pinterest",
+  "discord",
+  "twitch",
+  "apple music",
+  "youtube music",
+  "gmail",
+  "google docs",
+  "google drive",
+  "google maps",
+  "ebay",
+  "etsy",
+  "cnn",
+  "bbc",
+  "nytimes",
+  "weather",
+  "yahoo"
+]);
 
 function createId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -27,6 +78,33 @@ function normalizeText(text) {
   return text.toLowerCase().replace(/[^\w\s]/g, "").trim();
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function includesCommand(text, phrase) {
+  return normalizeText(text).includes(phrase);
+}
+
+function isStartNotesCommand(text) {
+  const normalized = normalizeText(text);
+  return includesCommand(normalized, START_NOTES_PHRASE)
+    || START_NOTES_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isStopNotesCommand(text) {
+  const normalized = normalizeText(text);
+  return includesCommand(normalized, STOP_NOTES_PHRASE)
+    || STOP_NOTES_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function stripStopNotesPhrase(text = "") {
+  return text
+    .replace(/\b(?:stop|finish)\s+taking\s+notes?(?:\s+for\s+me)?\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function isAffirmative(text) {
   return /^(yes|yeah|yep|sure|ok|okay|do it|open it|sounds good|that works|correct)(\s+please)?$/.test(
     normalizeText(text)
@@ -37,13 +115,103 @@ function isNegative(text) {
   return /^(no|nope|nah|cancel|dont|do not|not now)(\s+thanks)?$/.test(normalizeText(text));
 }
 
-function looksLikeWebsiteRequest(text) {
-  return /^(?:please\s+)?(?:open|go to|launch|visit|take me to|bring up)\s+.+$/i.test(text)
-    || /^(?:please\s+)?search(?:\s+for)?\s+.+?\s+on\s+.+$/i.test(text);
+function wantsMoreDetails(text) {
+  return /^(yes|yeah|yep|sure|ok|okay|show more|details|more detail|more details|tell me more)(\s+please)?$/.test(
+    normalizeText(text)
+  );
+}
+
+function normalizeSiteLookup(siteName = "") {
+  return siteName
+    .toLowerCase()
+    .replace(/[^a-z0-9.\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\.(?:com|tv|org|net)$/, "");
+}
+
+function parseWebsiteIntent(text = "") {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const searchMatch = trimmed.match(/^(?:please\s+)?search(?:\s+for)?\s+(.+?)\s+on\s+(.+)$/i);
+  if (searchMatch) {
+    return {
+      type: "search",
+      query: searchMatch[1].trim(),
+      siteName: searchMatch[2].trim()
+    };
+  }
+
+  const openMatch = trimmed.match(/^(?:please\s+)?(?:open|go to|launch|visit|take me to|bring up)\s+(.+)$/i);
+  if (openMatch) {
+    return {
+      type: "open",
+      siteName: openMatch[1].trim()
+    };
+  }
+
+  return null;
+}
+
+function looksLikeMusicRequest(text = "") {
+  return /^(?:please\s+)?play\s+.+$/i.test(text.trim());
+}
+
+function extractPostWakeCommand(text = "") {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+
+  const wakePattern = new RegExp(`${escapeRegExp(WAKE_PHRASE)}[\\s,:-]*(.*)$`, "i");
+  const match = trimmed.match(wakePattern);
+  return match?.[1]?.trim() || "";
+}
+
+function shouldPrimeActionWindow(text) {
+  if (looksLikeMusicRequest(text)) {
+    return true;
+  }
+
+  const intent = parseWebsiteIntent(text);
+  if (!intent) return false;
+
+  if (intent.type === "search") {
+    return true;
+  }
+
+  return KNOWN_WEBSITE_KEYS.has(normalizeSiteLookup(intent.siteName));
+}
+
+function buildSmartUrl(siteName = "") {
+  const normalized = siteName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return normalized ? `https://${normalized}.com/` : null;
+}
+
+function buildGoogleSearchUrl(query = "") {
+  const trimmed = query.trim();
+  return trimmed
+    ? `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
+    : "https://www.google.com/";
+}
+
+function buildResolverUrl(query = "") {
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+
+  const url = new URL("/open-site", CHAT_URL);
+  url.searchParams.set("query", trimmed);
+  return url.toString();
+}
+
+function resolvePendingActionUrl(data) {
+  if (data?.url) return data.url;
+  if (data?.query) return buildResolverUrl(data.query);
+  if (data?.siteName) return buildSmartUrl(data.siteName) || buildGoogleSearchUrl(data.siteName);
+  return null;
 }
 
 function createPrimedActionWindow(text) {
-  if (!looksLikeWebsiteRequest(text)) return null;
+  if (!shouldPrimeActionWindow(text)) return null;
 
   const primedWindow = window.open("", "_blank");
   if (!primedWindow) return null;
@@ -90,6 +258,35 @@ function buildActionReply(data) {
   const siteName = data?.siteName || "that website";
   const description = data?.description ? ` - ${data.description}` : "";
   return `${BUNNY_PREFIX}Alright, opening ${siteName}${description}.`;
+}
+
+async function copyTextToClipboard(text) {
+  if (!text) return false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.log("clipboard write failed:", error);
+    }
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch (error) {
+    console.log("clipboard fallback failed:", error);
+    return false;
+  }
 }
 
 function HomeScreen({ onStart, onQuickSelect }) {
@@ -271,6 +468,7 @@ function CharacterPickerModal({
 
 function ChatScreen({
   messages,
+  pendingFollowUp,
   inputValue,
   onInputChange,
   onSend,
@@ -306,6 +504,11 @@ function ChatScreen({
               {message.text}
             </div>
           ))}
+          {pendingFollowUp ? (
+            <div className="msg msg-bunny">
+              {`${BUNNY_PREFIX}I’m ready with more weather detail if you want it. Reply with yes or no.`}
+            </div>
+          ) : null}
         </div>
 
         <div className="input-bar">
@@ -362,6 +565,7 @@ export default function App() {
   const [selectedCostumeSrc, setSelectedCostumeSrc] = useState(null);
   const [layer3Src, setLayer3Src] = useState(null);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [pendingFollowUp, setPendingFollowUp] = useState(null);
   const [inputValue, setInputValue] = useState("");
   const [isConversationActive, setIsConversationActive] = useState(false);
   const [isBunnySpeaking, setIsBunnySpeaking] = useState(false);
@@ -509,7 +713,146 @@ export default function App() {
     });
   };
 
-  const askBunny = async (userText, primedWindow = null) => {
+  const pushNoteSegment = (text) => {
+    const segment = text.trim();
+    if (!segment) return;
+
+    const previousSegment = notesBuffer[notesBuffer.length - 1];
+    if (previousSegment && normalizeText(previousSegment) === normalizeText(segment)) {
+      return;
+    }
+
+    notesBuffer.push(segment);
+  };
+
+  const beginNoteMode = (transcript = START_NOTES_PHRASE) => {
+    stopBunnySpeech();
+    pendingAction = null;
+    setPendingFollowUp(null);
+    isTakingNotes = true;
+    notesBuffer = [];
+    appendMessage(`You: ${transcript}`, "user");
+    appendMessage(
+      `${BUNNY_PREFIX}Currently taking verbal notes. Say 'stop taking notes for me' to finish 📝`,
+      "bunny"
+    );
+    setLayer3Src(LAYER3_CHOICES.pencil);
+  };
+
+  const sendNotesForOrganization = async (notesText) => {
+    const placeholderId = appendMessage(`${BUNNY_PREFIX}Organizing your notes...`, "bunny", {
+      pending: true
+    });
+
+    try {
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          type: "notes",
+          content: notesText
+        })
+      });
+
+      const data = await response.json();
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === placeholderId
+            ? { ...message, text: `${BUNNY_PREFIX}${data.reply}`, pending: false }
+            : message
+        )
+      );
+
+      const copied = await copyTextToClipboard(data.reply);
+      const docsWindow = window.open("https://docs.google.com/document/create", "_blank");
+
+      if (docsWindow) {
+        docsWindow.focus?.();
+      }
+
+      if (copied && docsWindow) {
+        appendMessage(
+          `${BUNNY_PREFIX}I've organized your notes, copied them, and opened a document for you 📝`,
+          "bunny"
+        );
+      } else if (copied) {
+        appendMessage(
+          `${BUNNY_PREFIX}I've organized your notes and copied them for you 📝 If Google Docs did not open, your browser may have blocked the new tab.`,
+          "bunny"
+        );
+      } else if (docsWindow) {
+        appendMessage(
+          `${BUNNY_PREFIX}I've organized your notes and opened a document for you 📝 If the copy did not go through automatically, you can grab the notes right here in chat.`,
+          "bunny"
+        );
+      } else {
+        appendMessage(
+          `${BUNNY_PREFIX}I've organized your notes for you 📝 If Google Docs did not open automatically, your browser may have blocked the new tab.`,
+          "bunny"
+        );
+      }
+
+      setLayer3Src(data.layer3 ? LAYER3_CHOICES[data.layer3] || null : LAYER3_CHOICES.pencil);
+      playAudio(data.audio);
+    } catch (error) {
+      console.error(error);
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === placeholderId
+            ? {
+                ...message,
+                text: `${BUNNY_PREFIX}I had trouble organizing those notes just now. Please try again in a moment.`,
+                pending: false
+              }
+            : message
+        )
+      );
+
+      setLayer3Src(LAYER3_CHOICES.sweat);
+    }
+  };
+
+  const finishNoteMode = async (transcript = STOP_NOTES_PHRASE) => {
+    const finalSegment = stripStopNotesPhrase(transcript);
+    if (finalSegment) {
+      pushNoteSegment(finalSegment);
+    }
+
+    appendMessage(`You: ${transcript}`, "user");
+
+    isTakingNotes = false;
+    shouldListenRef.current = false;
+
+    try {
+      recognitionRef.current?.stop();
+    } catch (error) {
+      console.log("recognition stop for notes failed:", error);
+    }
+
+    const notesText = notesBuffer.join(" ").replace(/\s+/g, " ").trim();
+    notesBuffer = [];
+
+    if (!notesText) {
+      appendMessage(
+        `${BUNNY_PREFIX}I didn't catch any note content yet. Say 'start taking notes for me' when you want to try again.`,
+        "bunny"
+      );
+      setLayer3Src(LAYER3_CHOICES.confused);
+      shouldListenRef.current = true;
+      restartRecognitionSoon(0);
+      return;
+    }
+
+    await sendNotesForOrganization(notesText);
+    shouldListenRef.current = true;
+    restartRecognitionSoon(0);
+  };
+
+  const askBunny = async (userText, primedWindow = null, followUpContext = null) => {
     const placeholderId = appendMessage(`${BUNNY_PREFIX}...`, "bunny", { pending: true });
 
     try {
@@ -518,7 +861,11 @@ export default function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify(
+          followUpContext
+            ? { message: userText, followUpContext }
+            : { message: userText }
+        )
       });
 
       const data = await response.json();
@@ -537,8 +884,17 @@ export default function App() {
           action: data.action,
           data: data.data
         };
+        setPendingFollowUp(null);
       } else {
         pendingAction = null;
+        setPendingFollowUp(
+          data.needsFollowUp && data.followUpType
+            ? {
+                followUpType: data.followUpType,
+                weatherCache: data.weatherCache
+              }
+            : null
+        );
 
         if (data.action && data.data) {
           if (!executeAction(data.action, data.data, primedWindow)) {
@@ -567,6 +923,7 @@ export default function App() {
       );
 
       closePrimedActionWindow(primedWindow);
+      setPendingFollowUp(null);
       setLayer3Src(LAYER3_CHOICES.sweat);
     }
   };
@@ -577,10 +934,14 @@ export default function App() {
     if (isAffirmative(userText)) {
       const actionToRun = pendingAction;
       pendingAction = null;
+      const confirmedUrl = resolvePendingActionUrl(actionToRun.data);
+      const actionData = confirmedUrl
+        ? { ...actionToRun.data, url: confirmedUrl }
+        : actionToRun.data;
 
       appendMessage(`You: ${userText}`, "user");
-      executeAction(actionToRun.action, actionToRun.data);
-      appendMessage(buildActionReply(actionToRun.data), "bunny");
+      executeAction(actionToRun.action, actionData);
+      appendMessage(buildActionReply(actionData), "bunny");
       setLayer3Src(LAYER3_CHOICES.sparkle);
       return true;
     }
@@ -597,15 +958,87 @@ export default function App() {
     return false;
   };
 
+  const handlePendingFollowUpResponse = (userText) => {
+    if (!pendingFollowUp) return false;
+
+    if (wantsMoreDetails(userText)) {
+      const followUpToRun = pendingFollowUp;
+      setPendingFollowUp(null);
+
+      appendMessage(`You: ${userText}`, "user");
+      askBunny(userText, null, followUpToRun);
+      return true;
+    }
+
+    if (isNegative(userText)) {
+      setPendingFollowUp(null);
+
+      appendMessage(`You: ${userText}`, "user");
+      appendMessage(`${BUNNY_PREFIX}Okay, we can leave the weather snapshot there.`, "bunny");
+      setLayer3Src(LAYER3_CHOICES.shine);
+      return true;
+    }
+
+    return false;
+  };
+
   const submitUserText = (text, options = {}) => {
     const trimmedText = text.trim();
     if (!trimmedText) return;
+    const shouldEchoUser = options.skipUserEcho !== true;
+
+    if (isStartNotesCommand(trimmedText)) {
+      if (!shouldEchoUser) {
+        isTakingNotes = true;
+        notesBuffer = [];
+        stopBunnySpeech();
+        pendingAction = null;
+        setPendingFollowUp(null);
+        appendMessage(
+          `${BUNNY_PREFIX}Currently taking verbal notes. Say 'stop taking notes for me' to finish 📝`,
+          "bunny"
+        );
+        setLayer3Src(LAYER3_CHOICES.pencil);
+        return;
+      }
+
+      beginNoteMode(trimmedText);
+      return;
+    }
+
+    if (isTakingNotes) {
+      if (isStopNotesCommand(trimmedText)) {
+        void finishNoteMode(trimmedText);
+        return;
+      }
+
+      pushNoteSegment(trimmedText);
+      if (shouldEchoUser) {
+        appendMessage(`You: ${trimmedText}`, "user");
+      }
+      appendMessage(
+        `${BUNNY_PREFIX}Still taking notes for you. Say 'stop taking notes for me' whenever you want me to organize them.`,
+        "bunny"
+      );
+      setLayer3Src(LAYER3_CHOICES.pencil);
+      return;
+    }
 
     if (handlePendingActionResponse(trimmedText)) {
       return;
     }
 
-    appendMessage(`You: ${trimmedText}`, "user");
+    if (handlePendingFollowUpResponse(trimmedText)) {
+      return;
+    }
+
+    if (pendingFollowUp) {
+      setPendingFollowUp(null);
+    }
+
+    if (shouldEchoUser) {
+      appendMessage(`You: ${trimmedText}`, "user");
+    }
     const primedWindow = options.userInitiated ? createPrimedActionWindow(trimmedText) : null;
     askBunny(trimmedText, primedWindow);
   };
@@ -643,7 +1076,22 @@ export default function App() {
 
         const transcript = event.results[index][0].transcript.trim();
         const cleaned = normalizeText(transcript);
-        if (!cleaned || isBunnySpeakingRef.current) continue;
+        if (!cleaned) continue;
+
+        if (isTakingNotes) {
+          if (isStopNotesCommand(transcript)) {
+            void finishNoteMode(transcript);
+            continue;
+          }
+
+          pushNoteSegment(transcript);
+          continue;
+        }
+
+        if (isStartNotesCommand(transcript)) {
+          beginNoteMode(transcript);
+          continue;
+        }
 
         if (cleaned.includes(STOP_PHRASE)) {
           appendMessage("You: Stop", "user");
@@ -659,16 +1107,23 @@ export default function App() {
           continue;
         }
 
+        if (isBunnySpeakingRef.current) continue;
+
         if (!isConversationActiveRef.current) {
           if (cleaned.includes(WAKE_PHRASE)) {
             appendMessage(`You: ${transcript}`, "user");
             setIsConversationActive(true);
             appendMessage(`${BUNNY_PREFIX}I'm listening.`, "bunny");
+
+            const wakeCommand = extractPostWakeCommand(transcript);
+            if (wakeCommand) {
+              submitUserText(wakeCommand, { userInitiated: true, skipUserEcho: true });
+            }
           }
           continue;
         }
 
-        submitUserText(transcript);
+        submitUserText(transcript, { userInitiated: true });
       }
     };
 
@@ -678,6 +1133,15 @@ export default function App() {
 
     recognition.onend = () => {
       isRecognitionRunningRef.current = false;
+
+      if (isTakingNotes) {
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error("Recognition note-mode restart failed:", error);
+        }
+        return;
+      }
 
       if (!shouldListenRef.current || restartingRecognitionRef.current) return;
 
@@ -744,6 +1208,9 @@ export default function App() {
   const returnHome = () => {
     stopBunnySpeech();
     pendingAction = null;
+    isTakingNotes = false;
+    notesBuffer = [];
+    setPendingFollowUp(null);
     setIsConversationActive(false);
     setView("home");
   };
@@ -768,6 +1235,7 @@ export default function App() {
       {view === "chat" ? (
         <ChatScreen
           messages={messages}
+          pendingFollowUp={pendingFollowUp}
           inputValue={inputValue}
           onInputChange={setInputValue}
           onSend={sendMessage}
