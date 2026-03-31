@@ -59,7 +59,9 @@ export const LAYER3_CHOICES = {
   tulip: asset("tulip.png"),
   purpstar: asset("purpstar.png"),
   moon: asset("moon.png"),
-  beer: asset("beer.png")
+  beer: asset("beer.png"),
+  ramen: asset("ramen.png"),
+  soda: asset("soda.png")
 };
 
 export const WAKE_PHRASE = "come in agent fluffy bunny";
