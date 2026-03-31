@@ -416,12 +416,20 @@ function CharacterPickerModal({
   selectedCharacterSrc,
   selectedCostumeSrc,
   onPickCharacter,
-  onPickCostume
+  onPickCostume,
+  onBack
 }) {
   if (!isOpen) return null;
 
   return (
     <div className="costume-modal">
+      <button
+        className="utility-btn picker-overlay-back"
+        type="button"
+        onClick={onBack}
+      >
+        Back
+      </button>
       {step === "character" ? (
         <div className="costume-modal-content max-w-2xl">
           <h2>Select a Character!</h2>
@@ -564,6 +572,7 @@ export default function App() {
   const [selectedCharacterSrc, setSelectedCharacterSrc] = useState(DEFAULT_CHARACTER_SRC);
   const [selectedCostumeSrc, setSelectedCostumeSrc] = useState(null);
   const [layer3Src, setLayer3Src] = useState(null);
+  const [pickerOrigin, setPickerOrigin] = useState("home");
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [pendingFollowUp, setPendingFollowUp] = useState(null);
   const [inputValue, setInputValue] = useState("");
@@ -1180,11 +1189,13 @@ export default function App() {
   useEffect(() => () => stopCurrentAudio(), []);
 
   const openCharacterPicker = () => {
+    setPickerOrigin(view === "chat" ? "chat" : "home");
     setView("picker");
     setPickerStep("character");
   };
 
   const openCostumePicker = () => {
+    setPickerOrigin(view === "chat" ? "chat" : "home");
     setView("picker");
     setPickerStep("costume");
   };
@@ -1201,8 +1212,23 @@ export default function App() {
 
   const quickSelectCharacter = (src) => {
     setSelectedCharacterSrc(src);
+    setPickerOrigin("home");
     setView("picker");
     setPickerStep("costume");
+  };
+
+  const handlePickerBack = () => {
+    if (pickerOrigin === "chat") {
+      setView("chat");
+      return;
+    }
+
+    if (pickerStep === "costume") {
+      setPickerStep("character");
+      return;
+    }
+
+    returnHome();
   };
 
   const returnHome = () => {
@@ -1230,6 +1256,7 @@ export default function App() {
         selectedCostumeSrc={selectedCostumeSrc}
         onPickCharacter={handlePickCharacter}
         onPickCostume={handlePickCostume}
+        onBack={handlePickerBack}
       />
 
       {view === "chat" ? (

@@ -439,6 +439,13 @@ html, body, #app {
   font-weight: 700;
 }
 
+.picker-overlay-back {
+  position: absolute;
+  top: clamp(18px, 4vw, 40px);
+  left: clamp(18px, 4vw, 40px);
+  z-index: 26;
+}
+
 /* Character Grid */
 .character-grid {
   display: flex;
@@ -547,6 +554,11 @@ html, body, #app {
 }
 
 @media (max-width: 640px) {
+  .picker-overlay-back {
+    top: 14px;
+    left: 14px;
+  }
+
   .costume-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
