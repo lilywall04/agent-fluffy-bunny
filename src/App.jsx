@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   BUNNY_PREFIX,
+  BUTTON_CLICK_SRC,
   CHAT_URL,
   CHARACTER_CHOICES,
   COSTUME_CHOICES,
@@ -289,7 +290,7 @@ async function copyTextToClipboard(text) {
   }
 }
 
-function HomeScreen({ onStart, onQuickSelect }) {
+function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
 
@@ -396,13 +397,21 @@ function HomeScreen({ onStart, onQuickSelect }) {
               type="button"
               className="home-bunny-card"
               aria-label={`Choose ${character.label}`}
-              onClick={() => onQuickSelect(character.src)}
+              onClick={(event) => {
+                onButtonClickSound(event, () => onQuickSelect(character.src));
+              }}
             >
               <img className="home-bunny-image" src={character.src} alt={character.label} />
             </button>
           ))}
         </div>
-        <button className="home-cta" type="button" onClick={onStart}>
+        <button
+          className="home-cta"
+          type="button"
+          onClick={(event) => {
+            onButtonClickSound(event, onStart);
+          }}
+        >
           Start
         </button>
       </div>
@@ -417,7 +426,8 @@ function CharacterPickerModal({
   selectedCostumeSrc,
   onPickCharacter,
   onPickCostume,
-  onBack
+  onBack,
+  onButtonClickSound
 }) {
   if (!isOpen) return null;
 
@@ -439,7 +449,9 @@ function CharacterPickerModal({
                 key={character.label}
                 type="button"
                 className="char-btn"
-                onClick={() => onPickCharacter(character.src)}
+                onClick={(event) => {
+                  onButtonClickSound(event, () => onPickCharacter(character.src));
+                }}
               >
                 <img src={character.src} alt={character.label} />
                 <span>{character.label}</span>
@@ -456,7 +468,9 @@ function CharacterPickerModal({
                 key={costume.label}
                 type="button"
                 className={`costume-btn${(costume.src || "") === (selectedCostumeSrc || "") ? " is-selected" : ""}`}
-                onClick={() => onPickCostume(costume.src)}
+                onClick={(event) => {
+                  onButtonClickSound(event, () => onPickCostume(costume.src));
+                }}
               >
                 <div className="costume-preview">
                   <img src={selectedCharacterSrc} alt="Bunny" className="preview-base" />
@@ -486,7 +500,8 @@ function ChatScreen({
   selectedCharacterSrc,
   selectedCostumeSrc,
   layer3Src,
-  isBunnySpeaking
+  isBunnySpeaking,
+  onButtonClickSound
 }) {
   const chatLogRef = useRef(null);
 
@@ -497,7 +512,11 @@ function ChatScreen({
 
   return (
     <div className="overlay" id="appOverlay">
-      <button className="utility-btn utility-btn-page" type="button" onClick={onReturnHome}>
+      <button
+        className="utility-btn utility-btn-page"
+        type="button"
+        onClick={onReturnHome}
+      >
         Return Home
       </button>
 
@@ -520,10 +539,20 @@ function ChatScreen({
         </div>
 
         <div className="input-bar">
-          <button className="icon-btn" type="button" title="Change Character" onClick={onRepickCharacter}>
+          <button
+            className="icon-btn"
+            type="button"
+            title="Change Character"
+            onClick={onRepickCharacter}
+          >
             🐰
           </button>
-          <button className="icon-btn" type="button" title="Change Costume" onClick={onRepickCostume}>
+          <button
+            className="icon-btn"
+            type="button"
+            title="Change Costume"
+            onClick={onRepickCostume}
+          >
             👕
           </button>
           <input
@@ -535,7 +564,10 @@ function ChatScreen({
             type="text"
             placeholder="Come in Agent Fluffy Bunny..."
           />
-          <button type="button" onClick={onSend}>
+          <button
+            type="button"
+            onClick={onSend}
+          >
             Over
           </button>
         </div>
@@ -580,6 +612,8 @@ export default function App() {
   const [isBunnySpeaking, setIsBunnySpeaking] = useState(false);
 
   const matrixCanvasRef = useRef(null);
+  const buttonClickAudioSrcRef = useRef("");
+  const lastButtonClickTimeRef = useRef(0);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
   const shouldListenRef = useRef(true);
@@ -1189,6 +1223,35 @@ export default function App() {
   useEffect(() => () => stopCurrentAudio(), []);
 
   useEffect(() => {
+    const audio = new Audio(BUTTON_CLICK_SRC);
+    audio.preload = "auto";
+    audio.loop = false;
+    buttonClickAudioSrcRef.current = BUTTON_CLICK_SRC;
+    audio.load();
+
+    return () => {
+      buttonClickAudioSrcRef.current = "";
+    };
+  }, []);
+
+  const playButtonClick = (event) => {
+    const src = buttonClickAudioSrcRef.current;
+    if (!src) return;
+    if (!event || event.type !== "click" || !event.isTrusted) return;
+    if (event.timeStamp - lastButtonClickTimeRef.current < 150) return;
+
+    lastButtonClickTimeRef.current = event.timeStamp;
+
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    audio.loop = false;
+    audio.currentTime = 0;
+    audio.play().catch((error) => {
+      console.log("button click audio failed:", error);
+    });
+  };
+
+  useEffect(() => {
     if (!isBunnySpeaking) return undefined;
 
     const handlePointerDown = () => {
@@ -1247,6 +1310,11 @@ export default function App() {
     returnHome();
   };
 
+  const runButtonAction = (event, action) => {
+    playButtonClick(event);
+    action();
+  };
+
   const returnHome = () => {
     stopBunnySpeech();
     pendingAction = null;
@@ -1262,7 +1330,11 @@ export default function App() {
       <canvas ref={matrixCanvasRef} id="matrixCanvas" />
 
       {view === "home" ? (
-        <HomeScreen onStart={openCharacterPicker} onQuickSelect={quickSelectCharacter} />
+        <HomeScreen
+          onStart={openCharacterPicker}
+          onQuickSelect={quickSelectCharacter}
+          onButtonClickSound={runButtonAction}
+        />
       ) : null}
 
       <CharacterPickerModal
@@ -1273,6 +1345,7 @@ export default function App() {
         onPickCharacter={handlePickCharacter}
         onPickCostume={handlePickCostume}
         onBack={handlePickerBack}
+        onButtonClickSound={runButtonAction}
       />
 
       {view === "chat" ? (
@@ -1289,6 +1362,7 @@ export default function App() {
           selectedCostumeSrc={selectedCostumeSrc}
           layer3Src={layer3Src}
           isBunnySpeaking={isBunnySpeaking}
+          onButtonClickSound={runButtonAction}
         />
       ) : null}
 
