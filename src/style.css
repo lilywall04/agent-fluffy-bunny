@@ -27,6 +27,8 @@ html, body, #app {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .hidden {
@@ -185,26 +187,70 @@ html, body, #app {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  html, body, #app {
+    overflow: auto;
+  }
+
+  .app-shell {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow: auto;
+  }
+
+  #matrixCanvas {
+    position: fixed;
+  }
+
+  .home-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    align-items: center;
+    padding: 16px 16px 76px;
+  }
+
   .overlay {
     flex-direction: column-reverse;
-    padding: 20px;
-    gap: 20px;
+    justify-content: flex-start;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    padding: 72px 16px 20px;
+    gap: 16px;
   }
 
   .home-panel {
     gap: 10px;
-    transform: translateY(-10px);
+    transform: none;
   }
 
   .home-logo {
     width: min(820px, 96vw);
-    max-height: 34vh;
+    max-height: 28vh;
   }
 
   .home-title {
-    margin-top: -12px;
+    margin-top: -6px;
     font-size: clamp(1.05rem, 4vw, 1.4rem);
     letter-spacing: 0.18em;
+  }
+
+  .home-carousel {
+    width: 100%;
+    height: 190px;
+  }
+
+  .home-bunny-card {
+    width: clamp(68px, 18vw, 96px);
+  }
+
+  .home-cta {
+    width: min(280px, 100%);
+    padding: 14px 20px;
+    font-size: 0.95rem;
+    letter-spacing: 0.16em;
   }
 
   .app-info-link {
@@ -213,7 +259,6 @@ html, body, #app {
     font-size: 0.72rem;
     letter-spacing: 0.04em;
   }
-
 }
 
 /* Chat Interface */
@@ -384,8 +429,8 @@ html, body, #app {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative; /* Removes absolute positioning */
-  opacity: 1; /* Always visible */
+  position: relative;
+  opacity: 1;
 }
 
 .bunny-img {
@@ -431,6 +476,9 @@ html, body, #app {
   border-radius: 28px;
   text-align: center;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  width: min(720px, calc(100% - 32px));
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
 }
 .costume-modal-content h2 {
   margin-top: 0;
@@ -559,7 +607,113 @@ html, body, #app {
     left: 14px;
   }
 
+  .utility-btn-page {
+    top: 14px;
+    right: 14px;
+  }
+
+  .chat-ui {
+    width: 100%;
+    max-width: none;
+    height: min(58vh, 520px);
+    min-height: 360px;
+    border-radius: 24px;
+  }
+
+  .chat-log {
+    padding: 18px 16px;
+    gap: 12px;
+  }
+
+  .msg {
+    max-width: 92%;
+    font-size: 0.95rem;
+    padding: 12px 14px;
+  }
+
+  .input-bar {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .input-bar input {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    padding: 14px 16px;
+  }
+
+  .input-bar button {
+    min-height: 46px;
+    padding: 0 18px;
+  }
+
+  .input-bar .icon-btn {
+    min-width: 46px;
+    padding: 0 14px;
+  }
+
+  .bunny-area {
+    width: 100%;
+    min-height: 220px;
+    flex: 0 0 auto;
+  }
+
+  .bunny-img,
+  .costume-img,
+  .layer3-img {
+    width: min(72vw, 320px);
+    max-height: 34vh;
+  }
+
+  .costume-modal {
+    align-items: flex-start;
+    padding: 64px 0 16px;
+    overflow-y: auto;
+  }
+
+  .costume-modal-content {
+    width: calc(100% - 24px);
+    padding: 22px 16px 18px;
+    border-radius: 22px;
+    max-height: none;
+  }
+
+  .costume-modal-content h2 {
+    margin-bottom: 18px;
+    font-size: 1.2rem;
+  }
+
+  .character-grid {
+    gap: 12px;
+  }
+
+  .char-btn {
+    width: calc(50% - 6px);
+    min-width: 120px;
+    padding: 10px;
+  }
+
+  .char-btn img {
+    width: 52px;
+    height: 52px;
+  }
+
   .costume-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .costume-preview {
+    width: 64px;
+    height: 64px;
+  }
+
+  .costume-btn {
+    padding: 10px;
+    gap: 8px;
+    font-size: 0.9rem;
   }
 }
