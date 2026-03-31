@@ -206,7 +206,7 @@ function HomeScreen({ onStart, onQuickSelect }) {
           ))}
         </div>
         <button className="home-cta" type="button" onClick={onStart}>
-          Go To Character Selection
+          Start
         </button>
       </div>
     </section>
