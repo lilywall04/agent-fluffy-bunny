@@ -75,6 +75,24 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function getClientSessionId() {
+  const storageKey = "agent-fluffy-bunny-session-id";
+
+  try {
+    const existingId = window.localStorage.getItem(storageKey);
+    if (existingId) {
+      return existingId;
+    }
+
+    const nextId = createId().replace(/[^a-zA-Z0-9_-]/g, "");
+    window.localStorage.setItem(storageKey, nextId);
+    return nextId;
+  } catch (error) {
+    console.log("session storage unavailable:", error);
+    return createId().replace(/[^a-zA-Z0-9_-]/g, "");
+  }
+}
+
 function normalizeText(text) {
   return text.toLowerCase().replace(/[^\w\s]/g, "").trim();
 }
@@ -700,6 +718,7 @@ export default function App() {
   const [isBunnySpeaking, setIsBunnySpeaking] = useState(false);
 
   const matrixCanvasRef = useRef(null);
+  const sessionIdRef = useRef(getClientSessionId());
   const lastButtonClickTimeRef = useRef(0);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
@@ -884,7 +903,8 @@ export default function App() {
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Session-Id": sessionIdRef.current
         },
         body: JSON.stringify({
           type: "notes",
@@ -987,7 +1007,8 @@ export default function App() {
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Session-Id": sessionIdRef.current
         },
         body: JSON.stringify(
           followUpContext
