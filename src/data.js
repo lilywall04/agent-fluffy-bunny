@@ -69,7 +69,9 @@ export const WAKE_PHRASE = "come in agent fluffy bunny";
 export const END_PHRASE = "over and out";
 export const STOP_PHRASE = "stop";
 export const BUNNY_PREFIX = "AFB: ";
-export const CHAT_URL = "http://localhost:3000/chat";
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+export const CHAT_URL = `${API_BASE_URL}/chat`;
 
 export const INITIAL_MESSAGES = [
   {

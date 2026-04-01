@@ -49,6 +49,12 @@ Install frontend dependencies:
 npm install
 ```
 
+Create a frontend `.env` file from [.env.example](/Users/lilywallace/Desktop/agent-fluffy-bunny/.env.example):
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
 Install backend dependencies:
 
 ```bash
@@ -56,10 +62,17 @@ cd server
 npm install
 ```
 
-Create a `.env` file inside [server]() with:
+Create a backend `.env` file inside [server](/Users/lilywallace/Desktop/agent-fluffy-bunny/server) from [server/.env.example](/Users/lilywallace/Desktop/agent-fluffy-bunny/server/.env.example):
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+PORT=3000
+ALLOWED_ORIGINS=http://localhost:5173
+RATE_LIMIT_WINDOW_MS=60000
+MAX_REQUESTS_PER_WINDOW=15
+MAX_DAILY_REQUESTS_PER_IP=150
+MAX_MESSAGE_LENGTH=1500
+JSON_LIMIT=32kb
 ```
 
 ## Running Locally
@@ -104,6 +117,26 @@ While the bunny is speaking, clicking or tapping anywhere on the screen stops au
 
 ## Notes
 
-- The frontend currently posts chat requests to `http://localhost:3000/chat` from `src/data.js`.
+- The frontend reads the backend base URL from `VITE_API_BASE_URL` and posts to `${VITE_API_BASE_URL}/chat`.
 - Speech recognition depends on browser support for `SpeechRecognition` or `webkitSpeechRecognition`.
 - There are currently no automated tests configured in this repo.
+
+## Public Demo Protection
+
+- `OPENAI_API_KEY` stays server-side only and is never sent to the browser.
+- `ALLOWED_ORIGINS` lets you restrict which frontend URLs can call the backend. For production, set this to your real deployed frontend URL.
+- `MAX_REQUESTS_PER_WINDOW` and `RATE_LIMIT_WINDOW_MS` limit burst traffic per IP.
+- `MAX_DAILY_REQUESTS_PER_IP` adds a simple daily per-IP quota for demos.
+- `MAX_MESSAGE_LENGTH` and `JSON_LIMIT` reduce oversized or abusive requests.
+- For a public presentation, also use a separate OpenAI project/key with its own platform limits and budget alerts.
+
+## Deployment
+
+Frontend:
+- Deploy the repo root as a Vite static site.
+- Set `VITE_API_BASE_URL` to your public backend URL, for example `https://your-backend.onrender.com`.
+
+Backend:
+- Deploy the `server` folder as a Node web service.
+- Set `OPENAI_API_KEY` and the rest of the backend environment variables in your host dashboard.
+- Set `ALLOWED_ORIGINS` to your real public frontend origin, for example `https://your-frontend.vercel.app`.
