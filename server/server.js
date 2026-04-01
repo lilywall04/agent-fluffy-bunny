@@ -18,6 +18,10 @@ const MAX_REQUESTS_PER_WINDOW = Number(process.env.MAX_REQUESTS_PER_WINDOW || 15
 const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 15);
 const MAX_HISTORY_MESSAGES_PER_SESSION = Number(process.env.MAX_HISTORY_MESSAGES_PER_SESSION || 12);
 const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 1000 * 60 * 60 * 6);
+const allowedVercelProjectPrefixes = (process.env.ALLOWED_VERCEL_PROJECT_PREFIXES || "agent-fluffy-bunny")
+    .split(",")
+    .map((prefix) => prefix.trim().toLowerCase())
+    .filter(Boolean);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
@@ -41,9 +45,29 @@ function getClientIp(req) {
     return req.ip || req.socket?.remoteAddress || "unknown";
 }
 
+function isAllowedVercelOrigin(origin = "") {
+    if (!origin) return false;
+
+    try {
+        const parsed = new URL(origin);
+        const hostname = parsed.hostname.toLowerCase();
+
+        if (!hostname.endsWith(".vercel.app")) {
+            return false;
+        }
+
+        return allowedVercelProjectPrefixes.some((prefix) =>
+            hostname === `${prefix}.vercel.app` || hostname.startsWith(`${prefix}-`)
+        );
+    } catch (error) {
+        return false;
+    }
+}
+
 function isAllowedOrigin(origin = "") {
     if (!origin) return false;
     if (isLocalOrigin(origin)) return true;
+    if (isAllowedVercelOrigin(origin)) return true;
     return resolvedAllowedOrigins.includes(origin);
 }
 
