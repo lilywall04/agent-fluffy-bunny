@@ -506,9 +506,6 @@ function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
                 />
               ))}
             </div>
-            <div className="home-carousel-hint">
-              Swipe to browse, then tap a bunny to choose it.
-            </div>
           </div>
         ) : (
           <div
