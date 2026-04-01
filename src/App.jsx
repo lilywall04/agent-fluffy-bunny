@@ -304,14 +304,15 @@ function CharacterOptionButton({ character, onSelect, buttonRef = null }) {
   );
 }
 
-function HomeCarouselButton({ character, buttonRef = null, onSelect }) {
+function HomeCarouselButton({ character, buttonRef = null, onSelect, className = "", style = undefined }) {
   return (
     <button
       ref={buttonRef}
       type="button"
-      className="home-bunny-card"
+      className={`home-bunny-card${className ? ` ${className}` : ""}`}
       aria-label={`Choose ${character.label}`}
       onClick={onSelect}
+      style={style}
     >
       <img className="home-bunny-image" src={character.src} alt={character.label} />
     </button>
@@ -378,8 +379,28 @@ function BunnyDisplay({ selectedCharacterSrc, selectedCostumeSrc, layer3Src, isB
 function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
+  const [isCompactLayout, setIsCompactLayout] = useState(false);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const syncCompactLayout = () => {
+      setIsCompactLayout(mediaQuery.matches);
+    };
+
+    syncCompactLayout();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncCompactLayout);
+      return () => mediaQuery.removeEventListener("change", syncCompactLayout);
+    }
+
+    mediaQuery.addListener(syncCompactLayout);
+    return () => mediaQuery.removeListener(syncCompactLayout);
+  }, []);
+
+  useEffect(() => {
+    if (isCompactLayout) return undefined;
+
     const container = containerRef.current;
     const cards = cardRefs.current.filter(Boolean);
 
@@ -458,7 +479,7 @@ function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
       container.removeEventListener("mouseleave", handleMouseLeave);
       window.removeEventListener("resize", positionCards);
     };
-  }, []);
+  }, [isCompactLayout]);
 
   return (
     <section className="home-screen">
@@ -467,25 +488,49 @@ function HomeScreen({ onStart, onQuickSelect, onButtonClickSound }) {
         <div className="home-title" aria-label="Agent Fluffy Bunny">
           Agent Fluffy Bunny
         </div>
-        <div
-          ref={containerRef}
-          id="homeCarousel"
-          className="home-carousel"
-          aria-label="Character bunny carousel"
-        >
-          {CHARACTER_CHOICES.map((character, index) => (
-            <HomeCarouselButton
-              key={character.label}
-              character={character}
-              buttonRef={(node) => {
-                cardRefs.current[index] = node;
-              }}
-              onSelect={(event) => {
-                onButtonClickSound(event, () => onQuickSelect(character.src));
-              }}
-            />
-          ))}
-        </div>
+        {isCompactLayout ? (
+          <div className="home-carousel-mobile-wrap">
+            <div
+              id="homeCarousel"
+              className="home-carousel home-carousel-mobile"
+              aria-label="Character bunny carousel"
+            >
+              {CHARACTER_CHOICES.map((character) => (
+                <HomeCarouselButton
+                  key={character.label}
+                  character={character}
+                  className="home-bunny-card-mobile"
+                  onSelect={(event) => {
+                    onButtonClickSound(event, () => onQuickSelect(character.src));
+                  }}
+                />
+              ))}
+            </div>
+            <div className="home-carousel-hint">
+              Swipe to browse, then tap a bunny to choose it.
+            </div>
+          </div>
+        ) : (
+          <div
+            ref={containerRef}
+            id="homeCarousel"
+            className="home-carousel"
+            aria-label="Character bunny carousel"
+          >
+            {CHARACTER_CHOICES.map((character, index) => (
+              <HomeCarouselButton
+                key={character.label}
+                character={character}
+                buttonRef={(node) => {
+                  cardRefs.current[index] = node;
+                }}
+                onSelect={(event) => {
+                  onButtonClickSound(event, () => onQuickSelect(character.src));
+                }}
+              />
+            ))}
+          </div>
+        )}
         <button
           className="home-cta"
           type="button"

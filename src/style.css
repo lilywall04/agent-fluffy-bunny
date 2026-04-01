@@ -120,6 +120,19 @@ html, body, #app {
   filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.5));
 }
 
+.home-carousel-mobile-wrap {
+  width: 100%;
+}
+
+.home-carousel-hint {
+  color: rgba(185, 255, 212, 0.7);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 12px;
+}
+
 .home-cta {
   border: 1px solid rgba(88, 255, 147, 0.42);
   border-radius: 999px;
@@ -242,8 +255,39 @@ html, body, #app {
     height: 190px;
   }
 
-  .home-bunny-card {
-    width: clamp(68px, 18vw, 96px);
+  .home-carousel-mobile {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 14px 18px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    perspective: none;
+    transform-style: flat;
+  }
+
+  .home-carousel-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-bunny-card-mobile {
+    position: relative;
+    top: auto;
+    left: auto;
+    flex: 0 0 auto;
+    width: clamp(88px, 26vw, 120px);
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+    scroll-snap-align: center;
+  }
+
+  .home-carousel-hint {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
   }
 
   .home-cta {
