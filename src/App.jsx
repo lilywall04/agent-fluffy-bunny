@@ -729,6 +729,26 @@ export default function App() {
   const restartingRecognitionRef = useRef(false);
 
   useEffect(() => {
+    const warmupUrl = new URL("/", CHAT_URL).toString();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
+    fetch(warmupUrl, {
+      method: "GET",
+      signal: controller.signal
+    }).catch((error) => {
+      console.log("backend warmup skipped:", error);
+    }).finally(() => {
+      window.clearTimeout(timeoutId);
+    });
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
     isConversationActiveRef.current = isConversationActive;
   }, [isConversationActive]);
 
