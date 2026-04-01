@@ -15,13 +15,16 @@ const MAX_MESSAGE_LENGTH = Number(process.env.MAX_MESSAGE_LENGTH || 1500);
 const JSON_LIMIT = process.env.JSON_LIMIT || "32kb";
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const MAX_REQUESTS_PER_WINDOW = Number(process.env.MAX_REQUESTS_PER_WINDOW || 15);
-const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 150);
+const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 15);
+const MAX_HISTORY_MESSAGES_PER_SESSION = Number(process.env.MAX_HISTORY_MESSAGES_PER_SESSION || 12);
+const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 1000 * 60 * 60 * 6);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 const resolvedAllowedOrigins = allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS;
 const rateLimitBuckets = new Map();
+const conversationHistories = new Map();
 
 function isLocalOrigin(origin = "") {
     if (!origin) return false;
@@ -34,24 +37,93 @@ function isLocalOrigin(origin = "") {
     }
 }
 
-function isVercelOrigin(origin = "") {
-    if (!origin) return false;
+function getClientIp(req) {
+    return req.ip || req.socket?.remoteAddress || "unknown";
+}
 
-    try {
-        const parsed = new URL(origin);
-        return parsed.hostname.endsWith(".vercel.app");
-    } catch (error) {
-        return false;
+function isAllowedOrigin(origin = "") {
+    if (!origin) return false;
+    if (isLocalOrigin(origin)) return true;
+    return resolvedAllowedOrigins.includes(origin);
+}
+
+function getSessionId(req) {
+    const headerValue = req.headers["x-session-id"];
+    if (typeof headerValue !== "string") return null;
+
+    const sessionId = headerValue.trim();
+    return /^[a-zA-Z0-9_-]{16,128}$/.test(sessionId) ? sessionId : null;
+}
+
+function cleanupConversationHistories(currentTime) {
+    for (const [sessionId, entry] of conversationHistories.entries()) {
+        if (currentTime - entry.updatedAt > SESSION_TTL_MS) {
+            conversationHistories.delete(sessionId);
+        }
     }
 }
 
-function getClientIp(req) {
-    const forwardedFor = req.headers["x-forwarded-for"];
-    if (typeof forwardedFor === "string" && forwardedFor.trim()) {
-        return forwardedFor.split(",")[0].trim();
+function getConversationHistory(sessionId, currentTime) {
+    cleanupConversationHistories(currentTime);
+
+    const existingEntry = conversationHistories.get(sessionId);
+    if (existingEntry) {
+        existingEntry.updatedAt = currentTime;
+        return existingEntry.messages;
     }
 
-    return req.ip || req.socket?.remoteAddress || "unknown";
+    const messages = [];
+    conversationHistories.set(sessionId, {
+        messages,
+        updatedAt: currentTime
+    });
+    return messages;
+}
+
+function rememberExchange(history, userMessage, assistantResponse) {
+    history.push({
+        role: "user",
+        content: userMessage
+    });
+
+    history.push({
+        role: "assistant",
+        content: JSON.stringify({
+            reply: assistantResponse.reply,
+            emotion: assistantResponse.emotion,
+            layer3: assistantResponse.layer3
+        })
+    });
+
+    if (history.length > MAX_HISTORY_MESSAGES_PER_SESSION) {
+        history.splice(0, history.length - MAX_HISTORY_MESSAGES_PER_SESSION);
+    }
+}
+
+function requireAllowedChatOrigin(req, res, next) {
+    const origin = req.headers.origin;
+
+    if (!origin || !isAllowedOrigin(origin)) {
+        res.status(403).json({
+            error: "Origin not allowed."
+        });
+        return;
+    }
+
+    next();
+}
+
+function requireSessionId(req, res, next) {
+    const sessionId = getSessionId(req);
+    if (!sessionId) {
+        res.status(400).json({
+            error: "A valid session ID is required."
+        });
+        return;
+    }
+
+    req.sessionId = sessionId;
+    next();
 }
 
 function getDailyKey(now) {
@@ -113,11 +185,19 @@ function applyChatQuota(req, res, next) {
         bucket.dailyCount = 0;
     }
 
-    if (bucket.windowCount >= MAX_REQUESTS_PER_WINDOW || bucket.dailyCount >= MAX_DAILY_REQUESTS_PER_IP) {
-        const retryAfterSeconds = Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - currentTime) / 1000));
+    const hitWindowLimit = bucket.windowCount >= MAX_REQUESTS_PER_WINDOW;
+    const hitDailyLimit = bucket.dailyCount >= MAX_DAILY_REQUESTS_PER_IP;
+
+    if (hitWindowLimit || hitDailyLimit) {
+        const retryAfterSeconds = hitDailyLimit
+            ? Math.max(1, Math.ceil((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) - currentTime) / 1000))
+            : Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - currentTime) / 1000));
+
         res.set("Retry-After", String(retryAfterSeconds));
         res.status(429).json({
-            error: "Rate limit exceeded. Please try again later."
+            error: hitDailyLimit
+                ? `Daily limit reached. This demo allows ${MAX_DAILY_REQUESTS_PER_IP} questions per IP each day.`
+                : "Rate limit exceeded. Please try again later."
         });
         return;
     }
@@ -140,12 +220,7 @@ app.use(cors({
             return;
         }
 
-        if (resolvedAllowedOrigins.includes(origin)) {
-            callback(null, true);
-            return;
-        }
-
-        if (isVercelOrigin(origin)) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
             return;
         }
@@ -160,12 +235,6 @@ app.set("trust proxy", 1);
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
-
-/*
-Conversation memory
-This stores the conversation so the AI remembers previous messages
-*/
-let conversationHistory = [];
 
 const HOPECORE_QUOTES = [
     {
@@ -1307,22 +1376,6 @@ function detectHopecoreIntent(message = "") {
     return /\bhopecore\b/i.test(rawMessage) || /\bhope\s+core\b/i.test(normalizedMessage);
 }
 
-function rememberExchange(userMessage, assistantResponse) {
-    conversationHistory.push({
-        role: "user",
-        content: userMessage
-    });
-
-    conversationHistory.push({
-        role: "assistant",
-        content: JSON.stringify({
-            reply: assistantResponse.reply,
-            emotion: assistantResponse.emotion,
-            layer3: assistantResponse.layer3
-        })
-    });
-}
-
 async function generateStructuredNotes(content = "") {
     const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
@@ -1438,9 +1491,11 @@ app.get("/open-site", async (req, res) => {
 });
 
 /* Chat endpoint */
-app.post("/chat", applyChatQuota, async (req, res) => {
+app.post("/chat", requireAllowedChatOrigin, requireSessionId, applyChatQuota, async (req, res) => {
 
     const { message, followUpContext, type, content } = req.body;
+    const currentTime = Date.now();
+    const conversationHistory = getConversationHistory(req.sessionId, currentTime);
 
     try {
         if (!process.env.OPENAI_API_KEY) {
@@ -1460,7 +1515,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                     layer3: "confused"
                 };
 
-                rememberExchange("Please organize my notes.", emptyNotesResponse);
+                rememberExchange(conversationHistory, "Please organize my notes.", emptyNotesResponse);
                 res.json(await finalizeResponse(emptyNotesResponse));
                 return;
             }
@@ -1473,7 +1528,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                     skipAudio: true
                 };
 
-                rememberExchange("Please organize my verbal notes.", notesResponse);
+                rememberExchange(conversationHistory, "Please organize my verbal notes.", notesResponse);
                 res.json(await finalizeResponse(notesResponse));
                 return;
             } catch (error) {
@@ -1485,7 +1540,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                     layer3: "sweat"
                 };
 
-                rememberExchange("Please organize my verbal notes.", notesErrorResponse);
+                rememberExchange(conversationHistory, "Please organize my verbal notes.", notesErrorResponse);
                 res.json(await finalizeResponse(notesErrorResponse));
                 return;
             }
@@ -1514,7 +1569,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                 skipAudio: true
             };
 
-            rememberExchange(message, hopecoreResponse);
+            rememberExchange(conversationHistory, message, hopecoreResponse);
             res.json(await finalizeResponse(hopecoreResponse));
             return;
         }
@@ -1528,7 +1583,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                 layer3: "shine"
             };
 
-            rememberExchange(message, weatherDetailResponse);
+            rememberExchange(conversationHistory, message, weatherDetailResponse);
             res.json(await finalizeResponse(weatherDetailResponse));
             return;
         }
@@ -1545,7 +1600,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                         layer3: "confused"
                     };
 
-                    rememberExchange(message, locationNotFoundResponse);
+                    rememberExchange(conversationHistory, message, locationNotFoundResponse);
                     res.json(await finalizeResponse(locationNotFoundResponse));
                     return;
                 }
@@ -1565,7 +1620,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                     }
                 };
 
-                rememberExchange(message, weatherSummaryResponse);
+                rememberExchange(conversationHistory, message, weatherSummaryResponse);
                 res.json(await finalizeResponse(weatherSummaryResponse));
                 return;
             } catch (error) {
@@ -1577,7 +1632,7 @@ app.post("/chat", applyChatQuota, async (req, res) => {
                     layer3: "sweat"
                 };
 
-                rememberExchange(message, weatherErrorResponse);
+                rememberExchange(conversationHistory, message, weatherErrorResponse);
                 res.json(await finalizeResponse(weatherErrorResponse));
                 return;
             }
@@ -1585,14 +1640,14 @@ app.post("/chat", applyChatQuota, async (req, res) => {
 
         const musicAction = detectMusicAction(message);
         if (musicAction) {
-            rememberExchange(message, musicAction);
+            rememberExchange(conversationHistory, message, musicAction);
             res.json(await finalizeResponse(musicAction));
             return;
         }
 
         const websiteAction = await detectWebsiteAction(message);
         if (websiteAction) {
-            rememberExchange(message, websiteAction);
+            rememberExchange(conversationHistory, message, websiteAction);
             res.json(await finalizeResponse(websiteAction));
             return;
         }
