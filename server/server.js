@@ -45,14 +45,6 @@ function isVercelOrigin(origin = "") {
     }
 }
 
-function isLoopbackIp(ip = "") {
-    return [
-        "127.0.0.1",
-        "::1",
-        "::ffff:127.0.0.1"
-    ].includes(ip);
-}
-
 function getClientIp(req) {
     const forwardedFor = req.headers["x-forwarded-for"];
     if (typeof forwardedFor === "string" && forwardedFor.trim()) {
@@ -88,7 +80,7 @@ function cleanupRateLimitBuckets(todayKey, currentTime) {
 }
 
 function isLocalRequest(req) {
-    return isLocalOrigin(req.headers.origin) || isLoopbackIp(getClientIp(req));
+    return isLocalOrigin(req.headers.origin);
 }
 
 function applyChatQuota(req, res, next) {
