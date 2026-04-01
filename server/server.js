@@ -34,6 +34,17 @@ function isLocalOrigin(origin = "") {
     }
 }
 
+function isVercelOrigin(origin = "") {
+    if (!origin) return false;
+
+    try {
+        const parsed = new URL(origin);
+        return parsed.hostname.endsWith(".vercel.app");
+    } catch (error) {
+        return false;
+    }
+}
+
 function isLoopbackIp(ip = "") {
     return [
         "127.0.0.1",
@@ -127,7 +138,22 @@ function applyChatQuota(req, res, next) {
 
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || isLocalOrigin(origin) || resolvedAllowedOrigins.includes(origin)) {
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        if (isLocalOrigin(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        if (resolvedAllowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        if (isVercelOrigin(origin)) {
             callback(null, true);
             return;
         }
