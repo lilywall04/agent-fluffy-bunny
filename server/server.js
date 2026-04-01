@@ -15,7 +15,7 @@ const MAX_MESSAGE_LENGTH = Number(process.env.MAX_MESSAGE_LENGTH || 1500);
 const JSON_LIMIT = process.env.JSON_LIMIT || "32kb";
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const MAX_REQUESTS_PER_WINDOW = Number(process.env.MAX_REQUESTS_PER_WINDOW || 15);
-const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 150);
+const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 15);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
@@ -113,11 +113,19 @@ function applyChatQuota(req, res, next) {
         bucket.dailyCount = 0;
     }
 
-    if (bucket.windowCount >= MAX_REQUESTS_PER_WINDOW || bucket.dailyCount >= MAX_DAILY_REQUESTS_PER_IP) {
-        const retryAfterSeconds = Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - currentTime) / 1000));
+    const hitWindowLimit = bucket.windowCount >= MAX_REQUESTS_PER_WINDOW;
+    const hitDailyLimit = bucket.dailyCount >= MAX_DAILY_REQUESTS_PER_IP;
+
+    if (hitWindowLimit || hitDailyLimit) {
+        const retryAfterSeconds = hitDailyLimit
+            ? Math.max(1, Math.ceil((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) - currentTime) / 1000))
+            : Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - currentTime) / 1000));
+
         res.set("Retry-After", String(retryAfterSeconds));
         res.status(429).json({
-            error: "Rate limit exceeded. Please try again later."
+            error: hitDailyLimit
+                ? `Daily limit reached. This demo allows ${MAX_DAILY_REQUESTS_PER_IP} questions per IP each day.`
+                : "Rate limit exceeded. Please try again later."
         });
         return;
     }
