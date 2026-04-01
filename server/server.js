@@ -369,6 +369,13 @@ Visualize it every day and you will unconsciously start to do things that will m
     }
 ];
 
+const COOL_MATH_GAMES_SITE = {
+    name: "Cool Math Games",
+    url: "https://www.coolmathgames.com/",
+    description: "an online browser games website",
+    domain: "coolmathgames.com"
+};
+
 const WEBSITE_MAP = {
     youtube: {
         name: "YouTube",
@@ -421,6 +428,13 @@ const WEBSITE_MAP = {
         description: "an online shopping and services platform",
         domain: "amazon.com",
         buildSearchUrl: (query) => `https://www.amazon.com/s?k=${encodeURIComponent(query)}`
+    },
+    walmart: {
+        name: "Walmart",
+        url: "https://www.walmart.com/",
+        description: "an online shopping platform and retail marketplace",
+        domain: "walmart.com",
+        buildSearchUrl: (query) => `https://www.walmart.com/search?q=${encodeURIComponent(query)}`
     },
     instagram: {
         name: "Instagram",
@@ -555,6 +569,8 @@ const WEBSITE_MAP = {
         description: "a weather forecasting website",
         domain: "weather.com"
     },
+    "cool math games": COOL_MATH_GAMES_SITE,
+    coolmathgames: COOL_MATH_GAMES_SITE,
     yahoo: {
         name: "Yahoo",
         url: "https://www.yahoo.com/",
@@ -591,6 +607,12 @@ function normalizeLookupValue(value = "") {
     return value.toLowerCase().replace(/[^a-z0-9.\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function normalizeWebsiteLookupKey(value = "") {
+    return normalizeLookupValue(value)
+        .replace(/\bdot\s+(com|tv|org|net)\b/g, ".$1")
+        .replace(/\.(?:com|tv|org|net)$/, "");
+}
+
 function cleanSiteRequest(value = "") {
     return value
         .trim()
@@ -623,7 +645,7 @@ function getWebsiteMatch(siteRequest = "") {
     const cleanedSite = formatSiteName(siteRequest);
     if (!cleanedSite) return null;
 
-    const normalizedSite = normalizeLookupValue(cleanedSite).replace(/\.(?:com|tv|org|net)$/, "");
+    const normalizedSite = normalizeWebsiteLookupKey(cleanedSite);
     return WEBSITE_MAP[normalizedSite] || null;
 }
 
@@ -1437,13 +1459,16 @@ async function synthesizeAudio(text) {
 }
 
 async function finalizeResponse(payload) {
-    const { skipAudio, ...responsePayload } = payload;
+    const { skipAudio, speechText, ...responsePayload } = payload;
 
     if (skipAudio || !responsePayload.reply) {
         return responsePayload;
     }
 
-    const audio = await synthesizeAudio(responsePayload.reply);
+    const audioSource = typeof speechText === "string" && speechText.trim()
+        ? speechText.trim()
+        : responsePayload.reply;
+    const audio = await synthesizeAudio(audioSource);
     return audio ? { ...responsePayload, audio } : responsePayload;
 }
 
@@ -1586,11 +1611,12 @@ app.post("/chat", requireAllowedChatOrigin, requireSessionId, applyChatQuota, as
 
         if (detectHopecoreIntent(message)) {
             const quote = getRandomHopecoreQuote();
+            const spokenQuote = quote.text.replace(/\s+/g, " ").trim();
             const hopecoreResponse = {
                 reply: `\u{1F331} Hopecore Drop:\n\n"${quote.text}"\n\n\u2014 ${quote.author}`,
                 emotion: "hopeful",
                 layer3: "sparkle",
-                skipAudio: true
+                speechText: `Here's your hopecore quote. ${spokenQuote} Quote by ${quote.author}.`
             };
 
             rememberExchange(conversationHistory, message, hopecoreResponse);

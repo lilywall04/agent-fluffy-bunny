@@ -42,6 +42,7 @@ const KNOWN_WEBSITE_KEYS = new Set([
   "netflix",
   "hulu",
   "amazon",
+  "walmart",
   "instagram",
   "twitter",
   "x",
@@ -64,6 +65,8 @@ const KNOWN_WEBSITE_KEYS = new Set([
   "bbc",
   "nytimes",
   "weather",
+  "cool math games",
+  "coolmathgames",
   "yahoo"
 ]);
 
@@ -144,6 +147,7 @@ function normalizeSiteLookup(siteName = "") {
   return siteName
     .toLowerCase()
     .replace(/[^a-z0-9.\s]/g, " ")
+    .replace(/\bdot\s+(com|tv|org|net)\b/g, ".$1")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\.(?:com|tv|org|net)$/, "");
