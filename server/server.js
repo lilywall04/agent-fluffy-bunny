@@ -6,8 +6,138 @@ const OpenAI = require("openai");
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+const DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+];
+const PORT = Number(process.env.PORT || 3000);
+const MAX_MESSAGE_LENGTH = Number(process.env.MAX_MESSAGE_LENGTH || 1500);
+const JSON_LIMIT = process.env.JSON_LIMIT || "32kb";
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
+const MAX_REQUESTS_PER_WINDOW = Number(process.env.MAX_REQUESTS_PER_WINDOW || 15);
+const MAX_DAILY_REQUESTS_PER_IP = Number(process.env.MAX_DAILY_REQUESTS_PER_IP || 150);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+const resolvedAllowedOrigins = allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS;
+const rateLimitBuckets = new Map();
+
+function isLocalOrigin(origin = "") {
+    if (!origin) return false;
+
+    try {
+        const parsed = new URL(origin);
+        return ["localhost", "127.0.0.1"].includes(parsed.hostname);
+    } catch (error) {
+        return false;
+    }
+}
+
+function isLoopbackIp(ip = "") {
+    return [
+        "127.0.0.1",
+        "::1",
+        "::ffff:127.0.0.1"
+    ].includes(ip);
+}
+
+function getClientIp(req) {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if (typeof forwardedFor === "string" && forwardedFor.trim()) {
+        return forwardedFor.split(",")[0].trim();
+    }
+
+    return req.ip || req.socket?.remoteAddress || "unknown";
+}
+
+function getDailyKey(now) {
+    return `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
+}
+
+function cleanupRateLimitBuckets(todayKey, currentTime) {
+    for (const [ip, bucket] of rateLimitBuckets.entries()) {
+        const isWindowExpired = currentTime - bucket.windowStart >= RATE_LIMIT_WINDOW_MS;
+        const isStaleDay = bucket.dayKey !== todayKey && bucket.dailyCount === 0;
+
+        if (isWindowExpired) {
+            bucket.windowStart = currentTime;
+            bucket.windowCount = 0;
+        }
+
+        if (bucket.dayKey !== todayKey) {
+            bucket.dayKey = todayKey;
+            bucket.dailyCount = 0;
+        }
+
+        if (isStaleDay && bucket.windowCount === 0) {
+            rateLimitBuckets.delete(ip);
+        }
+    }
+}
+
+function isLocalRequest(req) {
+    return isLocalOrigin(req.headers.origin) || isLoopbackIp(getClientIp(req));
+}
+
+function applyChatQuota(req, res, next) {
+    if (isLocalRequest(req)) {
+        next();
+        return;
+    }
+
+    const now = new Date();
+    const currentTime = now.getTime();
+    const todayKey = getDailyKey(now);
+    const ip = getClientIp(req);
+
+    cleanupRateLimitBuckets(todayKey, currentTime);
+
+    const bucket = rateLimitBuckets.get(ip) || {
+        windowStart: currentTime,
+        windowCount: 0,
+        dayKey: todayKey,
+        dailyCount: 0
+    };
+
+    if (currentTime - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) {
+        bucket.windowStart = currentTime;
+        bucket.windowCount = 0;
+    }
+
+    if (bucket.dayKey !== todayKey) {
+        bucket.dayKey = todayKey;
+        bucket.dailyCount = 0;
+    }
+
+    if (bucket.windowCount >= MAX_REQUESTS_PER_WINDOW || bucket.dailyCount >= MAX_DAILY_REQUESTS_PER_IP) {
+        const retryAfterSeconds = Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - currentTime) / 1000));
+        res.set("Retry-After", String(retryAfterSeconds));
+        res.status(429).json({
+            error: "Rate limit exceeded. Please try again later."
+        });
+        return;
+    }
+
+    bucket.windowCount += 1;
+    bucket.dailyCount += 1;
+    rateLimitBuckets.set(ip, bucket);
+    next();
+}
+
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || isLocalOrigin(origin) || resolvedAllowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error("Origin not allowed by CORS"));
+    }
+}));
+app.use(express.json({ limit: JSON_LIMIT }));
+
+app.set("trust proxy", 1);
 
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -1290,11 +1420,18 @@ app.get("/open-site", async (req, res) => {
 });
 
 /* Chat endpoint */
-app.post("/chat", async (req, res) => {
+app.post("/chat", applyChatQuota, async (req, res) => {
 
     const { message, followUpContext, type, content } = req.body;
 
     try {
+        if (!process.env.OPENAI_API_KEY) {
+            res.status(500).json({
+                error: "Server is missing OPENAI_API_KEY."
+            });
+            return;
+        }
+
         if (type === "notes") {
             const notesContent = typeof content === "string" ? content.trim() : "";
 
@@ -1334,6 +1471,20 @@ app.post("/chat", async (req, res) => {
                 res.json(await finalizeResponse(notesErrorResponse));
                 return;
             }
+        }
+
+        if (typeof message !== "string" || !message.trim()) {
+            res.status(400).json({
+                error: "A non-empty message string is required."
+            });
+            return;
+        }
+
+        if (message.trim().length > MAX_MESSAGE_LENGTH) {
+            res.status(413).json({
+                error: `Message is too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.`
+            });
+            return;
         }
 
         if (detectHopecoreIntent(message)) {
@@ -1510,7 +1661,7 @@ app.post("/chat", async (req, res) => {
 
         console.error(error);
 
-        res.json({
+        res.status(500).json({
             reply: "Sorry! My bunny brain had trouble thinking.",
             emotion: "concerned",
             layer3: "sweat"
@@ -1521,6 +1672,16 @@ app.post("/chat", async (req, res) => {
 });
 
 
-app.listen(3000, () => {
-    console.log("🐰 Bunny brain running on http://localhost:3000");
+app.use((error, req, res, next) => {
+    if (error?.message === "Origin not allowed by CORS") {
+        res.status(403).json({ error: error.message });
+        return;
+    }
+
+    next(error);
+});
+
+
+app.listen(PORT, () => {
+    console.log(`🐰 Bunny brain running on http://localhost:${PORT}`);
 });
